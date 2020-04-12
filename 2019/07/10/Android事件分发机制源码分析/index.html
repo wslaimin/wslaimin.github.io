@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content>
+    <meta name="keyword" content="Android,Flutter">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Android事件分发机制源码分析 - Tfly的博客 | Tfly&#39;s Blog
+        
+    </title>
+
+    <link rel="canonical" href="https://wslaimin.github.io/2019/07/10/Android事件分发机制源码分析/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tfly&#39;s Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>Android事件分发机制源码分析</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by Tfly on
+                        2019-07-10
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <h2 id="Part1-事件来源以及传递顺序"><a href="#Part1-事件来源以及传递顺序" class="headerlink" title="Part1:事件来源以及传递顺序"></a>Part1:事件来源以及传递顺序</h2><h3 id="Activity分发事件源码"><a href="#Activity分发事件源码" class="headerlink" title="Activity分发事件源码"></a>Activity分发事件源码</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">dispatchTouchEvent</span><span class="params">(MotionEvent ev)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">if</span> (ev.getAction() == MotionEvent.ACTION_DOWN) &#123;</span><br><span class="line">		onUserInteraction();</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">if</span> (getWindow().superDispatchTouchEvent(ev)) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> onTouchEvent(ev);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当触屏、按下Home键、back键、menu键等都会触发onUserInteraction()，可以重写这个方法处理一些用户交互。可以看到Activity将事件交给Window来处理。如果Window不能消费事件Activity调用onTouchEvent()自行处理事件。PhoneWindow是Window的唯一实现类，接下来分析PhoneWindow分发事件过程。</p>
+<h3 id="PhoneWindow分发事件源码"><a href="#PhoneWindow分发事件源码" class="headerlink" title="PhoneWindow分发事件源码"></a>PhoneWindow分发事件源码</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">superDispatchTouchEvent</span><span class="params">(MotionEvent event)</span> </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> mDecor.superDispatchTouchEvent(event);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mDecor是DecorView类的对象，DecorView继承FrameLayout，PhoneWindow只是把事件交由顶级DecorView处理。由于DecorView继承FrameLayout，FrameLayout继承ViewGroup，所以，之后的事件分发过程与ViewGroup事件分发过程一样。接下来Part2会介绍这部分。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>事件首先传递给Activity，Activity将事件传递给Window（PhoneWindow是其实现类），Window把事件交给顶级DecorView处理，如果Window没有消费这个事件则Activity调用oTouchEvent()自行处理事件。</p>
+<h2 id="Part2-ViewGroup事件分发过程"><a href="#Part2-ViewGroup事件分发过程" class="headerlink" title="Part2:ViewGroup事件分发过程"></a>Part2:ViewGroup事件分发过程</h2><p>只针对主要流程以及相应代码进行分析，不会贴出完整代码。ViewGroup的事件分发过程主要在dispatchTouchEvent()方法中。</p>
+<p>首先，对MotionEvent做个简单介绍。事件序列开始于ACTION_DOWN，终于ACTION_UP。对于单指操作有ACTION_DOWN、ACTION_MOVE、ACTION_UP等事件序列组成。多指操作由ACTION_DOWN、ACTION_POINTER_DOWN、ACTION_MOVE、ACTION_POINTER_UP、ACTION_UP事件序列组成。pointer可以理解为触摸点。多指对应的pointerId不变，pointerIndex在事件序列中是变化的。<br>更多参考：<a href="http://www.jianshu.com/p/0c863bbde8eb" target="_blank" rel="noopener">http://www.jianshu.com/p/0c863bbde8eb</a></p>
+<p>事件序列的起始动作是ACTION_DOWN，在新事件序列到达时要做一些状态清除操作。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Handle an initial down.</span></span><br><span class="line"><span class="keyword">if</span> (actionMasked == MotionEvent.ACTION_DOWN) &#123;</span><br><span class="line">	<span class="comment">// Throw away all previous state when starting a new touch gesture.</span></span><br><span class="line">	<span class="comment">// The framework may have dropped the up or cancel event for the previous gesture</span></span><br><span class="line">	<span class="comment">// due to an app switch, ANR, or some other state change.</span></span><br><span class="line">	<span class="comment">/**由于一些特殊原因丢失ACTION_UP或者ACTION_CANCEL，</span></span><br><span class="line"><span class="comment">	*导致事件序列结束时mFirstTouchTarget(TouchTarget链表)未被清空，</span></span><br><span class="line"><span class="comment">	* 新事件序列到达时，要先清空mFirstTouchTarget</span></span><br><span class="line"><span class="comment">	*/</span></span><br><span class="line">	cancelAndClearTouchTargets(ev);</span><br><span class="line">	<span class="comment">//主要设置 mGroupFlags &amp;= ~FLAG_DISALLOW_INTERCEPT</span></span><br><span class="line">	resetTouchState();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看看cancelAndClearTouchTargets()和resetTouchState()的具体实现。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">* Cancels and clears all touch targets.</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">cancelAndClearTouchTargets</span><span class="params">( MotionEvent event )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> ( mFirstTouchTarget != <span class="keyword">null</span> )</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">boolean</span> syntheticEvent = <span class="keyword">false</span>;</span><br><span class="line">		<span class="keyword">if</span> ( event == <span class="keyword">null</span> )</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">final</span> <span class="keyword">long</span> now = SystemClock.uptimeMillis();</span><br><span class="line">			event = MotionEvent.obtain( now, now, MotionEvent.ACTION_CANCEL, <span class="number">0.0f</span>, <span class="number">0.0f</span>, <span class="number">0</span> );</span><br><span class="line">			event.setSource( InputDevice.SOURCE_TOUCHSCREEN );</span><br><span class="line">			syntheticEvent = <span class="keyword">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">for</span> ( TouchTarget target = mFirstTouchTarget; target != <span class="keyword">null</span>; target = target.next )</span><br><span class="line">		&#123;</span><br><span class="line">			resetCancelNextUpFlag( target.child );</span><br><span class="line">			dispatchTransformedTouchEvent( event, <span class="keyword">true</span>, target.child, target.pointerIdBits );</span><br><span class="line">		&#125;</span><br><span class="line">		clearTouchTargets();</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> ( syntheticEvent )</span><br><span class="line">		&#123;</span><br><span class="line">			event.recycle();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>dispatchTransformedTouchEvent()后面再分析，先来看clearTouchTargets()方法。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Clears all touch targets.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">clearTouchTargets</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	TouchTarget target = mFirstTouchTarget;</span><br><span class="line">	<span class="keyword">if</span> ( target != <span class="keyword">null</span> )</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">do</span></span><br><span class="line">		&#123;</span><br><span class="line">			TouchTarget next = target.next;</span><br><span class="line">			target.recycle();</span><br><span class="line">			target = next;</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">while</span> ( target != <span class="keyword">null</span> );</span><br><span class="line">		mFirstTouchTarget = <span class="keyword">null</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>显而易见，clearTouchTargets()对mFirstTouchTarget指向的链表进行了清空操作。<br>接下来看看resetTouchState()方法的实现：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">resetTouchState</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        clearTouchTargets();</span><br><span class="line">        resetCancelNextUpFlag(<span class="keyword">this</span>);</span><br><span class="line">        mGroupFlags &amp;= ~FLAG_DISALLOW_INTERCEPT;</span><br><span class="line">        mNestedScrollAxes = SCROLL_AXIS_NONE;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>同样对mFirstTouchTarget指向的链表进行了清空，更重要的是设置了~FLAG_DISALLOW_INTERCEPT标志位。引出一个结论，子View在ACTION_DOWN时调用ViewGroup的requestDisallowInterceptTouchEvent()方法是无效的。</p>
+<p>接下来ViewGroup检测是否要拦截事件：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Check for interception. */</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">boolean</span> intercepted;</span><br><span class="line"><span class="comment">/* ACTION_DOWN或者mFirstTouchTarget!=null时检测是否要拦截事件 */</span></span><br><span class="line"><span class="keyword">if</span> ( actionMasked == MotionEvent.ACTION_DOWN|| mFirstTouchTarget != <span class="keyword">null</span> )&#123;</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">boolean</span> disallowIntercept = (mGroupFlags &amp; FLAG_DISALLOW_INTERCEPT) != <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">if</span> ( !disallowIntercept )</span><br><span class="line">	&#123;</span><br><span class="line">		intercepted = onInterceptTouchEvent( ev );</span><br><span class="line">		<span class="comment">/* restore action in case it was changed */</span></span><br><span class="line">		ev.setAction( action );  </span><br><span class="line">	&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">		intercepted = <span class="keyword">false</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 * There are no touch targets and this action is not an initial down</span></span><br><span class="line"><span class="comment">	 * so this view group continues to intercept touches.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	intercepted = <span class="keyword">true</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过上面代码，可以看出，ViewGroup在ACTON_DOWN或mFirstTouchTarget!=null条件时都会检测是否需要拦截事件；在mFirstTouchTarget!=null的情况下，可以通过设置FLAG_DISALLOW_INTERCEPT或~FLAG_DISALLOW_INTERCEPT标记位来决定ViewGroup是否允许拦截ACTION_DOWN之后的事件，在允许拦截的情况下是否拦截还取决于onInterceptTouchEvent()的返回值。对于滑动冲突,使用onInterceptTouchEvent()拦截事件.</p>
+<p>接下来ViewGroup会遍历Children，寻找能消费事件的Child。实现代码如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Check for cancelation.</span></span><br><span class="line"><span class="comment"> * PFLAG_CANCEL_NEXT_UP_EVENT标记位文档解释是Indicates whether the view is temporarily detached</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">boolean</span> canceled = resetCancelNextUpFlag( <span class="keyword">this</span> )</span><br><span class="line">	|| actionMasked == MotionEvent.ACTION_CANCEL;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* Update list of touch targets for pointer down, if needed. */</span></span><br><span class="line"><span class="keyword">final</span> <span class="keyword">boolean</span> split= (mGroupFlags &amp; FLAG_SPLIT_MOTION_EVENTS) != <span class="number">0</span>;</span><br><span class="line">TouchTarget newTouchTarget = <span class="keyword">null</span>;</span><br><span class="line"><span class="keyword">boolean</span>	alreadyDispatchedToNewTouchTarget = <span class="keyword">false</span>;</span><br><span class="line"></span><br><span class="line"><span class="comment">/* View detached或者event类型为ACTION_CANCEL或者未被拦截 */</span></span><br><span class="line"><span class="keyword">if</span> ( !canceled &amp;&amp; !intercepted )</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 * If the event is targeting accessiiblity focus we give it to the</span></span><br><span class="line"><span class="comment">	 * view that has accessibility focus and if it does not handle it</span></span><br><span class="line"><span class="comment">	 * we clear the flag and dispatch the event to all children as usual.</span></span><br><span class="line"><span class="comment">	 * We are looking up the accessibility focused host to avoid keeping</span></span><br><span class="line"><span class="comment">	 * state since these events are very rare.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	View childWithAccessibilityFocus = ev.isTargetAccessibilityFocus()</span><br><span class="line">					   ? findChildWithAccessibilityFocus() : <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> ( actionMasked == MotionEvent.ACTION_DOWN</span><br><span class="line">	     || (split &amp;&amp; actionMasked == MotionEvent.ACTION_POINTER_DOWN)</span><br><span class="line">	     || actionMasked == MotionEvent.ACTION_HOVER_MOVE )</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">final</span> <span class="keyword">int</span> actionIndex = ev.getActionIndex(); <span class="comment">/* always 0 for down */</span></span><br><span class="line"></span><br><span class="line">		<span class="comment">/* 这里处理多触控情况，一个View如果有多指触摸，用32位的int记录不同Pointer */</span></span><br><span class="line">		<span class="keyword">final</span> <span class="keyword">int</span> idBitsToAssign = split ? <span class="number">1</span> &lt;&lt; ev.getPointerId( actionIndex )</span><br><span class="line">					   : TouchTarget.ALL_POINTER_IDS;</span><br><span class="line"></span><br><span class="line">		<span class="comment">/*</span></span><br><span class="line"><span class="comment">		 * Clean up earlier touch targets for this pointer id in case they</span></span><br><span class="line"><span class="comment">		 * have become out of sync.</span></span><br><span class="line"><span class="comment">		 */</span></span><br><span class="line">		removePointersFromTouchTargets( idBitsToAssign );</span><br><span class="line"></span><br><span class="line">		<span class="keyword">final</span> <span class="keyword">int</span> childrenCount = mChildrenCount;</span><br><span class="line">		<span class="keyword">if</span> ( newTouchTarget == <span class="keyword">null</span> &amp;&amp; childrenCount != <span class="number">0</span> )</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">final</span> <span class="keyword">float</span>	x = ev.getX( actionIndex );</span><br><span class="line">			<span class="keyword">final</span> <span class="keyword">float</span>	y = ev.getY( actionIndex );</span><br><span class="line">			<span class="comment">/*</span></span><br><span class="line"><span class="comment">			 * Find a child that can receive the event.</span></span><br><span class="line"><span class="comment">			 * Scan children from front to back.</span></span><br><span class="line"><span class="comment">			 */</span></span><br><span class="line">			<span class="keyword">final</span> ArrayList&lt;View&gt; preorderedList = buildOrderedChildList();</span><br><span class="line">			<span class="keyword">final</span> <span class="keyword">boolean</span> customOrder = preorderedList == <span class="keyword">null</span></span><br><span class="line">				&amp;&amp; isChildrenDrawingOrderEnabled();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">			<span class="keyword">final</span> View[] children = mChildren;</span><br><span class="line">			<span class="keyword">for</span> ( <span class="keyword">int</span> i = childrenCount - <span class="number">1</span>; i &gt;= <span class="number">0</span>; i-- )</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">final</span> <span class="keyword">int</span> childIndex = customOrder</span><br><span class="line">						       ? getChildDrawingOrder( childrenCount, i ) : i;</span><br><span class="line">				<span class="keyword">final</span> View child = (preorderedList == <span class="keyword">null</span>)</span><br><span class="line">						   ? children[childIndex] : preorderedList.get( childIndex );</span><br><span class="line"></span><br><span class="line">				<span class="comment">/*</span></span><br><span class="line"><span class="comment">				 * If there is a view that has accessibility focus we want it</span></span><br><span class="line"><span class="comment">				 * to get the event first and if not handled we will perform a</span></span><br><span class="line"><span class="comment">				 * normal dispatch. We may do a double iteration but this is</span></span><br><span class="line"><span class="comment">				 * safer given the timeframe.</span></span><br><span class="line"><span class="comment">				 */</span></span><br><span class="line">				<span class="keyword">if</span> ( childWithAccessibilityFocus != <span class="keyword">null</span> )</span><br><span class="line">				&#123;</span><br><span class="line">					<span class="keyword">if</span> ( childWithAccessibilityFocus != child )</span><br><span class="line">					&#123;</span><br><span class="line">						<span class="keyword">continue</span>;</span><br><span class="line">					&#125;</span><br><span class="line">					childWithAccessibilityFocus	= <span class="keyword">null</span>;</span><br><span class="line">					i				= childrenCount - <span class="number">1</span>;</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="comment">/* Child不可见并且无动画直接跳过，或者Point不在child范围内 */</span></span><br><span class="line">				<span class="keyword">if</span> ( !canViewReceivePointerEvents( child )</span><br><span class="line">				     || !isTransformedTouchPointInView( x, y, child, <span class="keyword">null</span> ) )</span><br><span class="line">				&#123;</span><br><span class="line">					ev.setTargetAccessibilityFocus( <span class="keyword">false</span> );</span><br><span class="line">					<span class="keyword">continue</span>;</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				<span class="comment">/* mFirstTouchTarget链表已经存在消费该事件的Child，用于多点触控 */</span></span><br><span class="line">				newTouchTarget = getTouchTarget( child );</span><br><span class="line">				<span class="keyword">if</span> ( newTouchTarget != <span class="keyword">null</span> )</span><br><span class="line">				&#123;</span><br><span class="line">					<span class="comment">/*</span></span><br><span class="line"><span class="comment">					 * Child is already receiving touch within its bounds.</span></span><br><span class="line"><span class="comment">					 * Give it the new pointer in addition to the ones it is handling.</span></span><br><span class="line"><span class="comment">					 */</span></span><br><span class="line">					newTouchTarget.pointerIdBits |= idBitsToAssign;</span><br><span class="line">					<span class="keyword">break</span>;</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				resetCancelNextUpFlag( child );</span><br><span class="line">				<span class="comment">/* 如果Child能消费事件，Child加入到mFirstTouchTarget链表 */</span></span><br><span class="line">				<span class="keyword">if</span> ( dispatchTransformedTouchEvent( ev, <span class="keyword">false</span>, child, idBitsToAssign ) )</span><br><span class="line">				&#123;</span><br><span class="line">					<span class="comment">/* Child wants to receive touch within its bounds. */</span></span><br><span class="line">					mLastTouchDownTime = ev.getDownTime();</span><br><span class="line">					<span class="keyword">if</span> ( preorderedList != <span class="keyword">null</span> )</span><br><span class="line">					&#123;</span><br><span class="line">						<span class="comment">/* childIndex points into presorted list, find original index */</span></span><br><span class="line">						<span class="keyword">for</span> ( <span class="keyword">int</span> j = <span class="number">0</span>; j &lt; childrenCount; j++ )</span><br><span class="line">						&#123;</span><br><span class="line">							<span class="keyword">if</span> ( children[childIndex] == mChildren[j] )</span><br><span class="line">							&#123;</span><br><span class="line">								mLastTouchDownIndex = j;</span><br><span class="line">								<span class="keyword">break</span>;</span><br><span class="line">							&#125;</span><br><span class="line">						&#125;</span><br><span class="line">					&#125;<span class="keyword">else</span>  &#123;</span><br><span class="line">						mLastTouchDownIndex = childIndex;</span><br><span class="line">					&#125;</span><br><span class="line">					mLastTouchDownX = ev.getX();</span><br><span class="line">					mLastTouchDownY	= ev.getY();</span><br><span class="line">					newTouchTarget	= addTouchTarget( child, idBitsToAssign );</span><br><span class="line">					alreadyDispatchedToNewTouchTarget = <span class="keyword">true</span>;</span><br><span class="line">					<span class="keyword">break</span>;</span><br><span class="line">				&#125;</span><br><span class="line"></span><br><span class="line">				<span class="comment">/*</span></span><br><span class="line"><span class="comment">				 * The accessibility focus didn't handle the event, so clear</span></span><br><span class="line"><span class="comment">				 * the flag and do a normal dispatch to all children.</span></span><br><span class="line"><span class="comment">				 */</span></span><br><span class="line">				ev.setTargetAccessibilityFocus(<span class="keyword">false</span>);</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="keyword">if</span> ( preorderedList != <span class="keyword">null</span> )</span><br><span class="line">				preorderedList.clear();</span><br><span class="line">		&#125;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> ( newTouchTarget == <span class="keyword">null</span> &amp;&amp; mFirstTouchTarget != <span class="keyword">null</span> )</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="comment">/*</span></span><br><span class="line"><span class="comment">			 * Did not find a child to receive the event.</span></span><br><span class="line"><span class="comment">			 * Assign the pointer to the least recently added target.</span></span><br><span class="line"><span class="comment">			 */</span></span><br><span class="line">			newTouchTarget = mFirstTouchTarget;</span><br><span class="line">			<span class="keyword">while</span> ( newTouchTarget.next != <span class="keyword">null</span> )</span><br><span class="line">			&#123;</span><br><span class="line">				newTouchTarget = newTouchTarget.next;</span><br><span class="line">			&#125;</span><br><span class="line">			newTouchTarget.pointerIdBits |= idBitsToAssign;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在ACTION_DOW或者ACTION_POINTER_DOWN时ViewGroup遍历Children，寻找能够消费事件的Child。Child不在TouchTarget链表中，addTouchTarget(child, idBitsToAssign)；Child已经存在TouchTarget链表中，多指触摸同一View情况，newTouchTarget.pointerIdBits |= idBitsToAssign。ViewGroup对于多指触控不同View的解决方案是使用链表，View对于多指触控的方案是使用32位int来记录每个Pointer。</p>
+<p>找到能够消费事件序列的Child后，ACTION_DOWN或ACTION_POINTER_DOWN之后的事件，在ViewGroup不拦截的情况下，直接交由Child处理；一旦被拦截，在dispatchTransformedTouchEventChild()方法中eventAction会置为ACTION_CANCEL，并且Child会从TouchTarget链表中清除，因此接收不到后续事件序列，都将交给ViewGroup处理。实现代码如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Dispatch to touch targets.</span></span><br><span class="line"><span class="comment"> * Child不能消费事件序列，交由ViewGroup处理</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">if</span> ( mFirstTouchTarget == <span class="keyword">null</span> )</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">/* No touch targets so treat this as an ordinary view. */</span></span><br><span class="line">	handled = dispatchTransformedTouchEvent( ev, canceled, <span class="keyword">null</span>,TouchTarget.ALL_POINTER_IDS );</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 * Dispatch to touch targets, excluding the new touch target if we already</span></span><br><span class="line"><span class="comment">	 * dispatched to it.  Cancel touch targets if necessary.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	TouchTarget	predecessor	= <span class="keyword">null</span>;</span><br><span class="line">	TouchTarget	target = mFirstTouchTarget;</span><br><span class="line">	<span class="keyword">while</span> ( target != <span class="keyword">null</span> )</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="keyword">final</span> TouchTarget next = target.next;</span><br><span class="line">		<span class="comment">/* 除去ACTION_DOWN或ACTION_POINTER_DOWN事件，因为在寻找过程中已经处理过 */</span></span><br><span class="line">		<span class="keyword">if</span> ( alreadyDispatchedToNewTouchTarget &amp;&amp; target == newTouchTarget )</span><br><span class="line">		&#123;</span><br><span class="line">			handled = <span class="keyword">true</span>;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			<span class="keyword">final</span> <span class="keyword">boolean</span> cancelChild = resetCancelNextUpFlag( target.child )|| intercepted;</span><br><span class="line">			<span class="keyword">if</span> ( dispatchTransformedTouchEvent( ev, cancelChild,</span><br><span class="line">				target.child, target.pointerIdBits ) )</span><br><span class="line">			&#123;</span><br><span class="line">				handled = <span class="keyword">true</span>;</span><br><span class="line">			&#125;</span><br><span class="line">			<span class="comment">/* PFLAG_CANCEL_NEXT_UP_EVENT重置或者ViewGroup拦截ACTION_DOWN或ACTION_POINTER_DOWN  之后的事件，清除相应TouchTarget */</span></span><br><span class="line">			<span class="keyword">if</span> ( cancelChild )</span><br><span class="line">			&#123;</span><br><span class="line">				<span class="keyword">if</span> ( predecessor == <span class="keyword">null</span> )</span><br><span class="line">				&#123;</span><br><span class="line">					mFirstTouchTarget = next;</span><br><span class="line">				&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">					predecessor.next = next;</span><br><span class="line">				&#125;</span><br><span class="line">				target.recycle();</span><br><span class="line">				target = next;</span><br><span class="line">				<span class="keyword">continue</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		predecessor	= target;</span><br><span class="line">		target = next;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>ViewGroup通过dispatchTransformedTouchEvent()方法将事件分发给Child。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Perform any necessary transformations and dispatch. */</span></span><br><span class="line"><span class="keyword">if</span> ( child == <span class="keyword">null</span> )</span><br><span class="line">&#123;</span><br><span class="line">	handled = <span class="keyword">super</span>.dispatchTouchEvent( transformedEvent );</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	<span class="comment">/* 将event坐标转换成Child坐标系内坐标 */</span></span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">float</span>	offsetX = mScrollX - child.mLeft;</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">float</span>	offsetY = mScrollY - child.mTop;</span><br><span class="line">	transformedEvent.offsetLocation( offsetX, offsetY );</span><br><span class="line">	<span class="keyword">if</span> ( !child.hasIdentityMatrix() )</span><br><span class="line">	&#123;</span><br><span class="line">		transformedEvent.transform( child.getInverseMatrix() );</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	handled = child.dispatchTouchEvent( transformedEvent );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>未找到可消费事件的Child，ViewGroup自行处理事件序列；否则，将event坐标转换成Child坐标系内坐标交由Child处理。</p>
+<p>ACTION_UP触发事件序列结束时清空TouchTarget，ACTION_PONITER_UP触发时，清空相应pointer的target。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Update list of touch targets for pointer up or cancel, if needed. */</span></span><br><span class="line"><span class="keyword">if</span> ( canceled</span><br><span class="line">     || actionMasked == MotionEvent.ACTION_UP</span><br><span class="line">     || actionMasked == MotionEvent.ACTION_HOVER_MOVE )</span><br><span class="line">&#123;</span><br><span class="line">	resetTouchState();</span><br><span class="line">&#125; <span class="keyword">else</span> <span class="keyword">if</span> ( split &amp;&amp; actionMasked == MotionEvent.ACTION_POINTER_UP )</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">int</span> actionIndex = ev.getActionIndex();</span><br><span class="line">	<span class="keyword">final</span> <span class="keyword">int</span> idBitsToRemove = <span class="number">1</span> &lt;&lt; ev.getPointerId( actionIndex );</span><br><span class="line">	removePointersFromTouchTargets( idBitsToRemove );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h2 id="Part3-View事件分发过程"><a href="#Part3-View事件分发过程" class="headerlink" title="Part3:View事件分发过程"></a>Part3:View事件分发过程</h2><blockquote>
+<p>注意：View只处理了单指触控的情况，未实现多指触控，如果有需要可以自己实现。针对View的事件分发只涉及单指情况。View的事件分发过程同样在dispatchTouchEvent()方法中，主要对这个方法进行分析即可。</p>
+</blockquote>
+<p>View的事件分发过程同样在dispatchTouchEvent()方法中，主要对这个方法进行分析即可。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="keyword">int</span> actionMasked = event.getActionMasked();</span><br><span class="line">	<span class="keyword">if</span> (actionMasked == MotionEvent.ACTION_DOWN) &#123;</span><br><span class="line">		<span class="comment">// Defensive cleanup for new gesture</span></span><br><span class="line">		stopNestedScroll();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面代码表示，ACTION_DOWN事件会使View停止滚动(如果View是能够滚动的，比如ListView)。<br>接下来View就要开始处理事件了，代码如下：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (onFilterTouchEventForSecurity(event)) &#123;</span><br><span class="line">	<span class="comment">//noinspection SimplifiableIfStatement</span></span><br><span class="line">	ListenerInfo li = mListenerInfo;</span><br><span class="line">	<span class="keyword">if</span> (li != <span class="keyword">null</span> &amp;&amp; li.mOnTouchListener != <span class="keyword">null</span></span><br><span class="line">		&amp;&amp; (mViewFlags &amp; ENABLED_MASK) == ENABLED</span><br><span class="line">		&amp;&amp; li.mOnTouchListener.onTouch(<span class="keyword">this</span>, event)) &#123;</span><br><span class="line">                result = <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">if</span> (!result &amp;&amp; onTouchEvent(event)) &#123;</span><br><span class="line">		result = <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>View状态是ENABLE并且调用过setOnTouchListener()方法，事件是否能被OnTouchListener消费取决于onTouch()的返回值。未调用过setOnTouchListener()方法或者OnTouchListener未消费事件，由onTouchEvent()方法来处理事件，事件是否能被消费取决于onTouchEvent()的返回值。接下来看看onTouchEvent()具体实现。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ( (viewFlags &amp; ENABLED_MASK) == DISABLED )</span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">if</span> ( event.getAction() == MotionEvent.ACTION_UP &amp;&amp; (mPrivateFlags &amp; PFLAG_PRESSED) !=<span class="number">0</span>)</span><br><span class="line">	&#123;</span><br><span class="line">		setPressed( <span class="keyword">false</span> );</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 * A disabled view that is clickable still consumes the touch</span></span><br><span class="line"><span class="comment">	 * events, it just doesn't respond to them.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="keyword">return</span>( ( (viewFlags &amp; CLICKABLE) == CLICKABLE ||</span><br><span class="line">		  (viewFlags &amp; LONG_CLICKABLE) == LONG_CLICKABLE) );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>其实，View是CLICKABLE或者LONG_CLICKABLE时返回结果都为true(具体可查看源码)，也就是View能够消费事件。上面的情况是View是DISABLED状态时，会在ACTION_UP或者(mPrivateFlags &amp; PFLAG_PRESSED) != 0设置mPrivateFlags &amp;= ~PFLAG_PRESSED。长按以及点击事件执行前都会先对这个标记位进行判断。View处于DISABLED状态可以消费事件，但是单击和长按事件不会执行。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> (mTouchDelegate != <span class="keyword">null</span>) &#123;</span><br><span class="line">	<span class="keyword">if</span> (mTouchDelegate.onTouchEvent(event)) &#123;</span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这段代码表示可以给View设置一个代理对象(别的View)，使用代理对象的onTouchEvent()来处理事件。比如扩大View的接触面积、几个View同步处理事件都可以用到。</p>
+<p>对于View的事件处理，主要分析对ACTION_DOWN和ACTION_UP进行分析。先来看对ACTION_DOWN事件的处理：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * For views inside a scrolling container, delay the pressed feedback for</span></span><br><span class="line"><span class="comment"> * a short period in case this is a scroll.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">if</span> ( isInScrollingContainer )</span><br><span class="line">&#123;</span><br><span class="line">	mPrivateFlags |= PFLAG_PREPRESSED;</span><br><span class="line">	<span class="keyword">if</span> ( mPendingCheckForTap == <span class="keyword">null</span> )</span><br><span class="line">	&#123;</span><br><span class="line">		mPendingCheckForTap = <span class="keyword">new</span> CheckForTap();</span><br><span class="line">	&#125;</span><br><span class="line">	mPendingCheckForTap.x	= event.getX();</span><br><span class="line">	mPendingCheckForTap.y	= event.getY();</span><br><span class="line">	postDelayed( mPendingCheckForTap, ViewConfiguration.getTapTimeout() );</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">	<span class="comment">/* Not inside a scrolling container, so show the feedback right away */</span></span><br><span class="line">	setPressed( <span class="keyword">true</span>, x, y );</span><br><span class="line">	checkForLongClick( <span class="number">0</span> );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>在滚动容器中的操作只是增加了个延时操作，本质还是和不在滚动容器中一样的。来看看checkForLongClick()方法的实现：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">checkForLongClick</span><span class="params">( <span class="keyword">int</span> delayOffset )</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">	<span class="keyword">if</span> ( (mViewFlags &amp; LONG_CLICKABLE) == LONG_CLICKABLE )</span><br><span class="line">	&#123;</span><br><span class="line">		mHasPerformedLongPress = <span class="keyword">false</span>;</span><br><span class="line"></span><br><span class="line">		<span class="keyword">if</span> ( mPendingCheckForLongPress == <span class="keyword">null</span> )</span><br><span class="line">		&#123;</span><br><span class="line">			mPendingCheckForLongPress = <span class="keyword">new</span> CheckForLongPress();</span><br><span class="line">		&#125;</span><br><span class="line">		mPendingCheckForLongPress.rememberWindowAttachCount();</span><br><span class="line">		postDelayed( mPendingCheckForLongPress,</span><br><span class="line">			ViewConfiguration.getLongPressTimeout() - delayOffset );</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>postDelayed()向Handler的消息队列插入一个待处理的Runable对象，并且设置延时，这也是为什么需要长按一段时间，长按操作才会执行。长按操作的具体实现都在CheckForLongPress里了。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">CheckForLongPress</span> <span class="keyword">implements</span> <span class="title">Runnable</span> </span>&#123;</span><br><span class="line">	<span class="keyword">private</span> <span class="keyword">int</span> mOriginalWindowAttachCount;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		<span class="keyword">if</span> ( isPressed() &amp;&amp; (mParent != <span class="keyword">null</span>)</span><br><span class="line">		     &amp;&amp; mOriginalWindowAttachCount == mWindowAttachCount )</span><br><span class="line">		&#123;</span><br><span class="line">			<span class="keyword">if</span> ( performLongClick() )</span><br><span class="line">			&#123;</span><br><span class="line">				mHasPerformedLongPress = <span class="keyword">true</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	<span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">rememberWindowAttachCount</span><span class="params">()</span></span></span><br><span class="line"><span class="function">	</span>&#123;</span><br><span class="line">		mOriginalWindowAttachCount = mWindowAttachCount;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>看到重点了，performLongClick()会执行setOnLongClickListener()方法设置的OnLongClickListener的onLongClick()方法。</p>
+<p>最后来看看View对ACTION_UP事件的处理：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> ( !mHasPerformedLongPress )</span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">/* This is a tap, so remove the longpress check */</span></span><br><span class="line">	removeLongPressCallback();</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Only perform take click actions if we were in the pressed state */</span></span><br><span class="line">	<span class="keyword">if</span> ( !focusTaken )</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="comment">/*</span></span><br><span class="line"><span class="comment">		 * Use a Runnable and post this rather than calling</span></span><br><span class="line"><span class="comment">		 * performClick directly. This lets other visual state</span></span><br><span class="line"><span class="comment">		 * of the view update before click actions start.</span></span><br><span class="line"><span class="comment">		 */</span></span><br><span class="line">		<span class="keyword">if</span> ( mPerformClick == <span class="keyword">null</span> )</span><br><span class="line">		&#123;</span><br><span class="line">			mPerformClick = <span class="keyword">new</span> PerformClick();</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">if</span> ( !post( mPerformClick ) )</span><br><span class="line">		&#123;</span><br><span class="line">			performClick();</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>如果mHasPerformedLongPress为false (可能OnLongClickListener为空或者onLongCkcik()方法返回false)，移除队列中的CheckForLongPress对象，然后如果OnClickListener不为空执行onClick()方法。</p>
+<blockquote>
+<p>注意：给一个Button设置OnLongClickListener和OnClickListener，onLongClick()方法返回false。这种情况长按和点击都会执行，验证方法不能使用System.out.print()来进行输出验证，因为System.out是一个有缓存的输出流，print()并不会立即输出，使用println()才会立即输出。</p>
+</blockquote>
+<h3 id="小结-1"><a href="#小结-1" class="headerlink" title="小结"></a>小结</h3><p>View的状态是CLICKABLE或者LONG_CLICKABLE都能够消费事件，如果是DISABLED状态则不会触发长按和点击事件。单击事件优先级最低，因为最后才会处理单击事件。</p>
+<p>至此，Android事件分发机制分析完毕。</p>
+
+
+                <hr>
+
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2019/07/10/Android KeyEvent分发机制/" data-toggle="tooltip" data-placement="top" title="Android KeyEvent分发机制">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2019/07/10/使用AccountManager和AbstractAccountAuthenticator建立账户系统/" data-toggle="tooltip" data-placement="top" title="使用AccountManager和AbstractAccountAuthenticator建立账户系统">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                
+
+                
+
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/TFly">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tfly&#39;s Blog 2020 
+                    <br>
+                    Theme by Hux
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by Kaijun
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("https://wslaimin.github.io/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

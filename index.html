@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content>
+    <meta name="keyword" content="Android,Flutter">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Tfly的博客 | Tfly&#39;s Blog
+        
+    </title>
+
+    <link rel="canonical" href="https://wslaimin.github.io/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tfly&#39;s Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    <!-- Page Header -->
+<header class="intro-header" style="background-image: url('/img/home-bg.jpg')">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 ">
+                <div class="site-heading">
+                    <h1>Tfly&#39;s Blog</h1>
+                    <!--<hr class="small">-->
+                    <span class="subheading">一叶一菩提，一花一世界</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+
+
+<!-- Main Content -->
+<div class="container">
+    <div class="row">
+        
+
+<!-- USE SIDEBAR -->
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-1
+                col-md-8 col-md-offset-1
+                col-sm-12
+                col-xs-12
+                post-container
+            ">
+            
+                <!-- Main Content -->
+
+
+<div class="post-preview">
+
+    <a href="/2020/02/22/Linux入门/">
+        <h2 class="post-title">
+            Linux入门
+        </h2>
+        <h3 class="post-subtitle">
+            
+        </h3>
+        <div class="post-content-preview">
+            
+系统启动流程
+文件系统文件系统：物理空间的组织方式在linux系统中，所有设备都当做文件操作。所以需要挂载操作：1mount /dev/device /mnt/device
+分区表示：例sda5sd:SATA接口的硬盘a:第一块硬盘5:第一个逻辑分区(1,2,3,4为主分区)
+用户
+shellshell是什么：命令解释器，用户与操作系统交互的接口
+如何获取命令帮助：
+
+whatis com......
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Tfly on
+        2020-02-22
+    </p>
+
+</div>
+<hr>
+
+<div class="post-preview">
+
+    <a href="/2019/07/10/Taking Photos Simply/">
+        <h2 class="post-title">
+            Taking Photos Simply
+        </h2>
+        <h3 class="post-subtitle">
+            
+        </h3>
+        <div class="post-content-preview">
+            以下内容均是使用已经存在的carmera app进行拍照。
+Request Camera Permission如果拍照是你的app一个非常重要的功能，在manifest文件使用&lt;uses-feature&gt;标签，Google Play只会对有相机的设备可见。
+12345&lt;manifest ... &gt;    &lt;uses-feature android:name="a......
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Tfly on
+        2019-07-10
+    </p>
+
+</div>
+<hr>
+
+<div class="post-preview">
+
+    <a href="/2019/07/10/Android 权限(Permission)控制/">
+        <h2 class="post-title">
+            Android 权限(Permission)控制
+        </h2>
+        <h3 class="post-subtitle">
+            
+        </h3>
+        <div class="post-content-preview">
+            Declaring Permissions在Manifest里声明的权限，不涉及用户隐私的权限，系统自动授权，涉及隐私的权限，系统会询问用户，让用户授权。
+Android5.1和更低版本，用户在安装时给app授权，包括涉及用户隐私的权限；Android6.0和更高版本涉及用户隐私的权限在运行时授权。
+App只需要直接执行相关动作的权限。比如，app需要获取联络人电话，需要READ_CONTA......
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Tfly on
+        2019-07-10
+    </p>
+
+</div>
+<hr>
+
+<div class="post-preview">
+
+    <a href="/2019/07/10/Android本地化/">
+        <h2 class="post-title">
+            Android本地化
+        </h2>
+        <h3 class="post-subtitle">
+            
+        </h3>
+        <div class="post-content-preview">
+            Android平台能够在运行时根据本地区域设置来选择不同语言。如果所有string都来源strings.xml，那么定义可选的string.xml文件，android系统在运行时会进行正确选择。
+实现方法：默认创建的string.xml在res/values/目录下。为支持不同语言，在res/目录下创建包含”-“和ISO语言码的values目录，形如”values-es”(es为ISO语言码......
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Tfly on
+        2019-07-10
+    </p>
+
+</div>
+<hr>
+
+<div class="post-preview">
+
+    <a href="/2019/07/10/FragmentTabHost的正确使用姿势/">
+        <h2 class="post-title">
+            FragmentTabHost的正确使用姿势
+        </h2>
+        <h3 class="post-subtitle">
+            
+        </h3>
+        <div class="post-content-preview">
+            使用方法1.定义布局文件
+123456789101112131415161718192021222324252627282930&lt;?xml version="1.0" encoding="utf-8"?&gt;&lt;android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com......
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Tfly on
+        2019-07-10
+    </p>
+
+</div>
+<hr>
+
+<div class="post-preview">
+
+    <a href="/2019/07/10/Http缓存/">
+        <h2 class="post-title">
+            Http缓存
+        </h2>
+        <h3 class="post-subtitle">
+            
+        </h3>
+        <div class="post-content-preview">
+            通过Internet获取资源既缓慢，成本又高。为此，Http协议里包含了控制缓存的部分，以使Http客户端可以缓存和重用以前获取的资源，从而优化性能，提升体验。虽然Http中关于缓存控制的部分，随着协议演进，有一些变化。但我觉着，作为后端程序员， 在开发Web服务时，只需要关注请求头If-None-Match、响应头ETag、响应头Cache-Control就足够了。因为这三个Http头就 ......
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Tfly on
+        2019-07-10
+    </p>
+
+</div>
+<hr>
+
+<div class="post-preview">
+
+    <a href="/2019/07/10/ImageView支持Exif/">
+        <h2 class="post-title">
+            ImageView支持Exif
+        </h2>
+        <h3 class="post-subtitle">
+            
+        </h3>
+        <div class="post-content-preview">
+            什么是Exif可交换图像文件格式,简称为Exif（Exchangeable image file format）。是专门为数码相机的照片设定的，可以记录数码照片的属性信息和拍摄数据。
+exif中包含图片的方向信息，这个是本文讨论的重点。exif orientation详细介绍
+链接中的orientation value,0th row,0th column的关系：
+
+可以用手机拍摄一张图片，......
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Tfly on
+        2019-07-10
+    </p>
+
+</div>
+<hr>
+
+<div class="post-preview">
+
+    <a href="/2019/07/10/Activity生命周期及Intent匹配规则/">
+        <h2 class="post-title">
+            Activity生命周期及Intent匹配规则
+        </h2>
+        <h3 class="post-subtitle">
+            
+        </h3>
+        <div class="post-content-preview">
+            Activity生命周期方法onStart和onResume，onPause和onStop的区别：onStart和onStop是从Activity是否可见这个角度来回调的，而onResume和onPause是从Activity是否位可交互这个角度来回调的。
+有一种特殊情况，如果新Activity采用了透明主题，那么当前Activity不会回调onStop。
+Activity状态保存onSav......
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Tfly on
+        2019-07-10
+    </p>
+
+</div>
+<hr>
+
+<div class="post-preview">
+
+    <a href="/2019/07/10/Intent.FLAG_ACTIVITY_FORWARD_RESULT作用/">
+        <h2 class="post-title">
+            Intent.FLAG_ACTIVITY_FORWARD_RESULT作用
+        </h2>
+        <h3 class="post-subtitle">
+            
+        </h3>
+        <div class="post-content-preview">
+            适用情况多个Activity的值传递。ActivityA到达ActivityB再到达ActivityC，但ActivityB为过渡页可以finish了，此时ActivityC将值透传至ActivityA。
+代码实现第一个页面：A跳到B
+12345678910111213141516171819202122public class AActivity extends Activity&#123......
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Tfly on
+        2019-07-10
+    </p>
+
+</div>
+<hr>
+
+<div class="post-preview">
+
+    <a href="/2019/07/10/Mac配置Android环境变量/">
+        <h2 class="post-title">
+            Mac配置Android环境变量
+        </h2>
+        <h3 class="post-subtitle">
+            
+        </h3>
+        <div class="post-content-preview">
+            背景Mac上在Android Studio控制台输入adb会发现adb:command not found的问题。原因是没有配置Android环境变量。
+配置环境变量打开mac的terminal终端，输入 cd ~/ 【进入当前用户的home目录】
+输入 touch .bash_profile 【如果没有.bash_profile这个文件，则创建一个文件】
+输入 open .bash_pro......
+        </div>
+    </a>
+    <p class="post-meta">
+        Posted by Tfly on
+        2019-07-10
+    </p>
+
+</div>
+<hr>
+
+
+
+<!-- Pager -->
+
+<ul class="pager">
+    
+    
+        <li class="next">
+            <a href="/page/2/">Older Posts &rarr;</a>
+        </li>
+    
+</ul>
+
+
+
+                <!-- 如果开启评论功能 -->
+                
+
+            </div>
+    <!-- Sidebar Container -->
+            <div class="
+                col-lg-3 col-lg-offset-0
+                col-md-3 col-md-offset-0
+                col-sm-12
+                col-xs-12
+                sidebar-container
+            ">
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                        
+                            
+                            <a href="/tags/#Android" title="Android" rel="28">Android</a>
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Short About -->
+                <section class="visible-md visible-lg">
+                    <hr><h5><a href="/about/">ABOUT ME</a></h5>
+                    <div class="short-about">
+
+                        
+                            <img src="/img/avatar.jpg" />
+                        
+
+                        
+                            <p>深入思考，耐心生活</p>
+                        
+
+                        <!-- SNS Link -->
+                        <ul class="list-inline">
+                            
+                            
+                            
+
+                            
+
+                            
+
+                            
+                                <li>
+                                    <a target="_blank"  href="https://github.com/TFly">
+                                        <span class="fa-stack fa-lg">
+                                            <i class="fa fa-circle fa-stack-2x"></i>
+                                            <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                                        </span>
+                                    </a>
+                                </li>
+                            
+                            
+                            
+                            
+                        </ul>
+                    </div>
+                </section>
+                
+                <!-- Friends Blog -->
+                
+            </div>
+        
+    </div>
+</div>
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                
+
+                
+
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/TFly">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tfly&#39;s Blog 2020 
+                    <br>
+                    Theme by Hux
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by Kaijun
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("https://wslaimin.github.io/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

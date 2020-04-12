@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content>
+    <meta name="keyword" content="Android,Flutter">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          给ListView的scrollBar加上标签 - Tfly的博客 | Tfly&#39;s Blog
+        
+    </title>
+
+    <link rel="canonical" href="https://wslaimin.github.io/2019/07/10/给ListView的scrollBar加上标签/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tfly&#39;s Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>给ListView的scrollBar加上标签</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by Tfly on
+                        2019-07-10
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <p>在使用信鸽的时候看到ListView的scorllBar加上了个标签，出于好奇，相对此一探究竟，看看是如何实现这种效果的。效果如图：</p>
+<p><img src="https://github.com/wslaimin/pics/raw/master/scrollBar.png" alt></p>
+<h3 id="确定算法"><a href="#确定算法" class="headerlink" title="确定算法"></a>确定算法</h3><p>翻看ListView和继承父类的API，并没有发现如getScrollBarHeight()，getScrollBarOffset()之类的API，但是发现有computeVerticalScrollExtent()，computeVerticalScrollRange()，computeVerticalScrollOffset()这几个API，借助这几个API可以间接计算出scrollBar的高度和偏移量。</p>
+<p>API介绍：<br>computeVerticalScrollExtent()：scrollBar滚动当前一屏内容需的偏移量<br>computeVerticalScrollRange()：scrollBar偏移量的范围<br>computeVerticalScrollOffset():scrollBar当前的偏移量</p>
+<p>初看这几个API的注释我也感觉似懂非懂，所以，还是去源码一探究竟吧。</p>
+<p>computeVerticalScrollRange():</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">int</span> <span class="title">computeVerticalScrollRange</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> result;</span><br><span class="line">    <span class="keyword">if</span> (mSmoothScrollbarEnabled) &#123;</span><br><span class="line">    result = Math.max(mItemCount * <span class="number">100</span>, <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (mScrollY != <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// Compensate for overscroll</span></span><br><span class="line">            result += Math.abs((<span class="keyword">int</span>) ((<span class="keyword">float</span>) mScrollY / getHeight() * mItemCount * <span class="number">100</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        result = mItemCount;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码计算出scrollBar的偏移量范围为itemCount*100。</p>
+<p>computeVerticalScrollExtent()：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">int</span> <span class="title">computeVerticalScrollExtent</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> count = getChildCount();</span><br><span class="line">    <span class="keyword">if</span> (count &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mSmoothScrollbarEnabled) &#123;</span><br><span class="line">            <span class="keyword">int</span> extent = count * <span class="number">100</span>;</span><br><span class="line">            </span><br><span class="line">            View view = getChildAt(<span class="number">0</span>);</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">int</span> top = view.getTop();</span><br><span class="line">            <span class="keyword">int</span> height = view.getHeight();</span><br><span class="line">            <span class="keyword">if</span> (height &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                extent += (top * <span class="number">100</span>) / height;</span><br><span class="line">            &#125;</span><br><span class="line">    </span><br><span class="line">            view = getChildAt(count - <span class="number">1</span>);</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">int</span> bottom = view.getBottom();</span><br><span class="line">            height = view.getHeight();</span><br><span class="line">            <span class="keyword">if</span> (height &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                extent -= ((bottom - getHeight()) * <span class="number">100</span>) / height;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">return</span> extent;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面计算的是滚动当前一屏内容（更准确的说是当前屏幕显示的item）的偏移量。</p>
+<blockquote>
+<p>extent += (top * 100) / height，top是负值，要减去在屏幕顶部外面的部分。同理要减掉在屏幕底部外面的部分。</p>
+</blockquote>
+<p>computeVerticalScrollOffset():</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">int</span> <span class="title">computeVerticalScrollOffset</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> firstPosition = mFirstPosition;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> childCount = getChildCount();</span><br><span class="line">    <span class="keyword">if</span> (firstPosition &gt;= <span class="number">0</span> &amp;&amp; childCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mSmoothScrollbarEnabled) &#123;</span><br><span class="line">            <span class="keyword">final</span> View view = getChildAt(<span class="number">0</span>);</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">int</span> top = view.getTop();</span><br><span class="line">            <span class="keyword">int</span> height = view.getHeight();</span><br><span class="line">            <span class="keyword">if</span> (height &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> Math.max(firstPosition * <span class="number">100</span> - (top * <span class="number">100</span>) / height +(<span class="keyword">int</span>)((<span class="keyword">float</span>)mScrollY / getHeight() * mItemCount * <span class="number">100</span>), <span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">int</span> index;</span><br><span class="line">            <span class="keyword">final</span> <span class="keyword">int</span> count = mItemCount;</span><br><span class="line">            <span class="keyword">if</span> (firstPosition == <span class="number">0</span>) &#123;</span><br><span class="line">                index = <span class="number">0</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (firstPosition + childCount == count) &#123;</span><br><span class="line">                index = count;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                index = firstPosition + childCount / <span class="number">2</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> (<span class="keyword">int</span>) (firstPosition + childCount * (index / (<span class="keyword">float</span>) count));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的代码是计算的是scrollBar的已经滚动的偏移量。</p>
+<p>简化下range、extent、offset的计算过程：</p>
+<ul>
+<li>range=mItemCount*100</li>
+<li>extent=count<em>100+(top</em>100)/height-(bottom-getHeight())*100/height</li>
+<li>offset=firstPosition<em>100-(top</em>100)/height</li>
+</ul>
+<p>从上面的计算看出，100只是个因子，可以是任何数，这里的作用是在保留除法结果的两位小数。</p>
+<p><img src="https://github.com/wslaimin/pics/raw/master/scrollbar_model.png" alt></p>
+<p>在屏幕上的scrollBar：<br>height=getMeasuredHeight()*computeVerticalScrollExtent()/computeVerticalScrollRange()</p>
+<blockquote>
+<p>getMeasuredHeight()为ListView测量后的高度</p>
+</blockquote>
+<p>offset=computeVerticalScrollOffset()*(getMeasuredHeight()-heigh)/(computeVerticalScrollRange()-computeVerticalScrollExtent())</p>
+<blockquote>
+<p>为什么offset不等于computeVerticalScrollOffset()/computeVerticalScrollRange()?其实一般情况下，这个算法和上面计算的结果是一样的，但是系统对scrollBar的真实height做了限制，最小值为scrollBar的Drawable的宽度的2倍。(可以参考ScrollBarUtils和ScrollBarDrawable)</p>
+</blockquote>
+<p>对上面的结论来证明下：</p>
+<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">size=getMeasuredHeight();</span><br><span class="line">extent=computeVerticalScrollExtent();</span><br><span class="line"><span class="built_in">offset</span>=computeVerticalScrollOffset();</span><br><span class="line">range=computeVerticalScrollRange();</span><br><span class="line">thumbHeight=size*extent/range</span><br><span class="line"></span><br><span class="line">thumbOffset=<span class="built_in">offset</span>*(size-(size*extent)/range)/(range-extent)</span><br><span class="line">=size*(<span class="built_in">offset</span>/range);</span><br></pre></td></tr></table></figure>
+<p>上面的计算是基于thumbHeight=size<em>extent/range计算得出时，thumbOffset=size</em>(offset/range)。反之则不成立。</p>
+<p>上面是分析算法，项目中的话可以用ScrollBarUtils更方便，也更准确。</p>
+<p>附上例子：<br><a href="https://github.com/wslaimin/ExtendedListView.git" target="_blank" rel="noopener">https://github.com/wslaimin/ExtendedListView.git</a></p>
+
+
+                <hr>
+
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2019/07/10/解密Android Resource/" data-toggle="tooltip" data-placement="top" title="解密Android Resource">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2019/07/10/Sharing Files笔记/" data-toggle="tooltip" data-placement="top" title="Sharing Files笔记">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                
+
+                
+
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/TFly">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tfly&#39;s Blog 2020 
+                    <br>
+                    Theme by Hux
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by Kaijun
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("https://wslaimin.github.io/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content>
+    <meta name="keyword" content="Android,Flutter">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          Android KeyEvent分发机制 - Tfly的博客 | Tfly&#39;s Blog
+        
+    </title>
+
+    <link rel="canonical" href="https://wslaimin.github.io/2019/07/10/Android KeyEvent分发机制/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tfly&#39;s Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>Android KeyEvent分发机制</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by Tfly on
+                        2019-07-10
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <h2 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h2><p>KeyEvent的分发机制和TouchEvent的分发机制略有不同，KeyEvent向下分发的事件没有被消费，并且KeyCode为KEYCODE_DPAD_LEFT,KEYCODE_DPAD_RIGHT,KEYCODE_DPAD_UP,KEYCODE_DPAD_DOWN,那么会按方向查找下一个控件并获取焦点。</p>
+<p>触摸事件分发机制传送门：<a href="http://blog.csdn.net/ws_lm/article/details/52562711" target="_blank" rel="noopener"> Android触摸事件分发机制源码分析</a></p>
+<h2 id="分发机制分析"><a href="#分发机制分析" class="headerlink" title="分发机制分析"></a>分发机制分析</h2><p>先放上整体流程图，稍后再详细解释：</p>
+<p><img src="https://github.com/wslaimin/pics/raw/master/KeyEvent.png" alt></p>
+<p>ViewRootImpl是所有View的顶层容器，所以从ViewRootImpl着手。ViewRootImpl的dispatchInputEvent()方法，向消息队列发出MSG_DISPATCH_INPUT_EVENT消息，Handler处理消息并调用ViewRootImpl的enqueueInputEvent()方法，将QueuedInputEvent插入到未处理KeyEvent队列的尾部。</p>
+<p>enqueueInputEvent()方法具体实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">enqueueInputEvent</span><span class="params">(InputEvent event,InputEventReceiver receiver, <span class="keyword">int</span> flags, <span class="keyword">boolean</span> processImmediately)</span> </span>&#123;</span><br><span class="line">    adjustInputEventForCompatibility(event);</span><br><span class="line">    QueuedInputEvent q = obtainQueuedInputEvent(event, receiver, flags);</span><br><span class="line"></span><br><span class="line">    QueuedInputEvent last = mPendingInputEventTail;</span><br><span class="line">    <span class="keyword">if</span> (last == <span class="keyword">null</span>) &#123;</span><br><span class="line">        mPendingInputEventHead = q;</span><br><span class="line">        mPendingInputEventTail = q;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        last.mNext = q;</span><br><span class="line">        mPendingInputEventTail = q;</span><br><span class="line">    &#125;</span><br><span class="line">    mPendingInputEventCount += <span class="number">1</span>;</span><br><span class="line">    Trace.traceCounter(Trace.TRACE_TAG_INPUT, mPendingInputEventQueueLengthCounterName,mPendingInputEventCount);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (processImmediately) &#123;</span><br><span class="line">        doProcessInputEvents();</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        scheduleProcessInputEvents();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>keyEvent插入未处理事件队列后，接下来要处理这些事件了。有两种处理方式，直接处理和向Handler发送异步消息处理。这里只分析直接处理的情况。</p>
+<p>doProcessInputEvents()方法遍历未处理事件队列逐个处理：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">doProcessInputEvents</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// Deliver all pending input events in the queue.</span></span><br><span class="line">        <span class="keyword">while</span> (mPendingInputEventHead != <span class="keyword">null</span>) &#123;</span><br><span class="line">            QueuedInputEvent q = mPendingInputEventHead;</span><br><span class="line">            mPendingInputEventHead = q.mNext;</span><br><span class="line">            <span class="keyword">if</span> (mPendingInputEventHead == <span class="keyword">null</span>) &#123;</span><br><span class="line">                mPendingInputEventTail = <span class="keyword">null</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            q.mNext = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">            mPendingInputEventCount -= <span class="number">1</span>;</span><br><span class="line">            Trace.traceCounter(Trace.TRACE_TAG_INPUT, mPendingInputEventQueueLengthCounterName,</span><br><span class="line">                    mPendingInputEventCount);</span><br><span class="line"></span><br><span class="line">            <span class="keyword">long</span> eventTime = q.mEvent.getEventTimeNano();</span><br><span class="line">            <span class="keyword">long</span> oldestEventTime = eventTime;</span><br><span class="line">            <span class="keyword">if</span> (q.mEvent <span class="keyword">instanceof</span> MotionEvent) &#123;</span><br><span class="line">                MotionEvent me = (MotionEvent)q.mEvent;</span><br><span class="line">                <span class="keyword">if</span> (me.getHistorySize() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                    oldestEventTime = me.getHistoricalEventTimeNano(<span class="number">0</span>);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            mChoreographer.mFrameInfo.updateInputEventTime(eventTime, oldestEventTime);</span><br><span class="line"></span><br><span class="line">            deliverInputEvent(q);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// We are done processing all input events that we can process right now</span></span><br><span class="line">        <span class="comment">// so we can clear the pending flag immediately.</span></span><br><span class="line">        <span class="keyword">if</span> (mProcessInputEventsScheduled) &#123;</span><br><span class="line">            mProcessInputEventsScheduled = <span class="keyword">false</span>;</span><br><span class="line">            mHandler.removeMessages(MSG_PROCESS_INPUT_EVENTS);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>QueuedInputEvent交给deliverInputEvent()方法来处理：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">deliverInputEvent</span><span class="params">(QueuedInputEvent q)</span> </span>&#123;</span><br><span class="line">    Trace.asyncTraceBegin(Trace.TRACE_TAG_VIEW,<span class="string">"deliverInputEvent"</span>,</span><br><span class="line">        q.mEvent.getSequenceNumber());</span><br><span class="line">    <span class="keyword">if</span> (mInputEventConsistencyVerifier != <span class="keyword">null</span>) &#123;</span><br><span class="line">        mInputEventConsistencyVerifier.onInputEvent(q.mEvent, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    InputStage stage;</span><br><span class="line">    <span class="keyword">if</span> (q.shouldSendToSynthesizer()) &#123;</span><br><span class="line">        stage = mSyntheticInputStage;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        stage = q.shouldSkipIme() ? mFirstPostImeInputStage : mFirstInputStage;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (stage != <span class="keyword">null</span>) &#123;</span><br><span class="line">        stage.deliver(q);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        finishInputEvent(q);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">``` `</span><br><span class="line"></span><br><span class="line">重头戏来了，这里出现了个InputStage对象stage，它是什么，从哪来？在ViewRootImpl的setView()方法中初始化InputStage对象：</span><br><span class="line"></span><br><span class="line">```java</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setView</span><span class="params">(View view, WindowManager.LayoutParams attrs, View panelParentView)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// Set up the input pipeline.</span></span><br><span class="line">    CharSequence counterSuffix = attrs.getTitle();</span><br><span class="line">    mSyntheticInputStage = <span class="keyword">new</span> SyntheticInputStage();</span><br><span class="line">    InputStage viewPostImeStage = <span class="keyword">new</span> ViewPostImeInputStage(mSyntheticInputStage);</span><br><span class="line">    InputStage nativePostImeStage = <span class="keyword">new</span> NativePostImeInputStage(viewPostImeStage,<span class="string">"aq:native-post-ime:"</span> + counterSuffix);</span><br><span class="line">    InputStage earlyPostImeStage = <span class="keyword">new</span> EarlyPostImeInputStage(nativePostImeStage);</span><br><span class="line">    InputStage imeStage = <span class="keyword">new</span> ImeInputStage(earlyPostImeStage,</span><br><span class="line">        <span class="string">"aq:ime:"</span> + counterSuffix);</span><br><span class="line">    InputStage viewPreImeStage = <span class="keyword">new</span> ViewPreImeInputStage(imeStage);</span><br><span class="line">    InputStage nativePreImeStage = <span class="keyword">new</span> NativePreImeInputStage(viewPreImeStage,</span><br><span class="line">        <span class="string">"aq:native-pre-ime:"</span> + counterSuffix);</span><br><span class="line"></span><br><span class="line">    mFirstInputStage = nativePreImeStage;</span><br><span class="line">    mFirstPostImeInputStage = earlyPostImeStage;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>InPuStage实际上是个管道，也就是责任链模式，事件在前一个InputStage未处理完会继续向下传递。KeyEvent的处理单元是ViewPostImeInputStage。</p>
+<p>InputStage的deliver()方法会调用onProcess()方法，这个是InputStage子类具体处理KeyEvent的方法。看看ViewPostImeInputStage的onProcess()方法实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">protected</span> <span class="keyword">int</span> <span class="title">onProcess</span><span class="params">(QueuedInputEvent q)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (q.mEvent <span class="keyword">instanceof</span> KeyEvent) &#123;</span><br><span class="line">        <span class="keyword">return</span> processKeyEvent(q);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> source = q.mEvent.getSource();</span><br><span class="line">        <span class="keyword">if</span> ((source &amp; InputDevice.SOURCE_CLASS_POINTER) != <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> processPointerEvent(q);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> ((source &amp; InputDevice.SOURCE_CLASS_TRACKBALL) != <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> processTrackballEvent(q);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> processGenericMotionEvent(q);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到里面调用了processKeyEvent()方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">int</span> <span class="title">processKeyEvent</span><span class="params">(QueuedInputEvent q)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> KeyEvent event = (KeyEvent)q.mEvent;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Deliver the key to the view hierarchy.</span></span><br><span class="line">    <span class="keyword">if</span> (mView.dispatchKeyEvent(event)) &#123;</span><br><span class="line">        <span class="keyword">return</span> FINISH_HANDLED;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (shouldDropInputEvent(q)) &#123;</span><br><span class="line">        <span class="keyword">return</span> FINISH_NOT_HANDLED;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// If the Control modifier is held, try to interpret the key as a shortcut.</span></span><br><span class="line">    <span class="keyword">if</span> (event.getAction() == KeyEvent.ACTION_DOWN</span><br><span class="line">        &amp;&amp; event.isCtrlPressed()</span><br><span class="line">        &amp;&amp; event.getRepeatCount() == <span class="number">0</span></span><br><span class="line">        &amp;&amp; !KeyEvent.isModifierKey(event.getKeyCode())) &#123;</span><br><span class="line">        <span class="keyword">if</span> (mView.dispatchKeyShortcutEvent(event)) &#123;</span><br><span class="line">            <span class="keyword">return</span> FINISH_HANDLED;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (shouldDropInputEvent(q)) &#123;</span><br><span class="line">            <span class="keyword">return</span> FINISH_NOT_HANDLED;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Apply the fallback event policy.</span></span><br><span class="line">        <span class="keyword">if</span> (mFallbackEventHandler.dispatchKeyEvent(event)) &#123;</span><br><span class="line">            <span class="keyword">return</span> FINISH_HANDLED;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (shouldDropInputEvent(q)) &#123;</span><br><span class="line">            <span class="keyword">return</span> FINISH_NOT_HANDLED;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Handle automatic focus changes.</span></span><br><span class="line">        <span class="keyword">if</span> (event.getAction() == KeyEvent.ACTION_DOWN) &#123;</span><br><span class="line">            <span class="keyword">int</span> direction = <span class="number">0</span>;</span><br><span class="line">            <span class="keyword">switch</span> (event.getKeyCode()) &#123;</span><br><span class="line">                <span class="keyword">case</span> KeyEvent.KEYCODE_DPAD_LEFT:</span><br><span class="line">                    <span class="keyword">if</span> (event.hasNoModifiers()) &#123;</span><br><span class="line">                        direction = View.FOCUS_LEFT;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> KeyEvent.KEYCODE_DPAD_RIGHT:</span><br><span class="line">                    <span class="keyword">if</span> (event.hasNoModifiers()) &#123;</span><br><span class="line">                        direction = View.FOCUS_RIGHT;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> KeyEvent.KEYCODE_DPAD_UP:</span><br><span class="line">                    <span class="keyword">if</span> (event.hasNoModifiers()) &#123;</span><br><span class="line">                        direction = View.FOCUS_UP;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> KeyEvent.KEYCODE_DPAD_DOWN:</span><br><span class="line">                    <span class="keyword">if</span> (event.hasNoModifiers()) &#123;</span><br><span class="line">                        direction = View.FOCUS_DOWN;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> KeyEvent.KEYCODE_TAB:</span><br><span class="line">                    <span class="keyword">if</span> (event.hasNoModifiers()) &#123;</span><br><span class="line">                        direction = View.FOCUS_FORWARD;</span><br><span class="line">                    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (event.hasModifiers(KeyEvent.META_SHIFT_ON)) &#123;</span><br><span class="line">                        direction = View.FOCUS_BACKWARD;</span><br><span class="line">                    &#125;</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (direction != <span class="number">0</span>) &#123;</span><br><span class="line">                View focused = mView.findFocus();</span><br><span class="line">                <span class="keyword">if</span> (focused != <span class="keyword">null</span>) &#123;</span><br><span class="line">                    View v = focused.focusSearch(direction);                        </span><br><span class="line">                    <span class="keyword">if</span> (v != <span class="keyword">null</span> &amp;&amp; v != focused) &#123;</span><br><span class="line">                        <span class="comment">// do the math the get the interesting rect</span></span><br><span class="line">                        <span class="comment">// of previous focused into the coord system of</span></span><br><span class="line">                        <span class="comment">// newly focused view</span></span><br><span class="line">                        focused.getFocusedRect(mTempRect);</span><br><span class="line">                        <span class="keyword">if</span> (mView <span class="keyword">instanceof</span> ViewGroup) &#123;</span><br><span class="line">                            ((ViewGroup) mView).offsetDescendantRectToMyCoords(focused, mTempRect);</span><br><span class="line">                            ((ViewGroup) mView).offsetRectIntoDescendantCoords(v, mTempRect);</span><br><span class="line">                        &#125;</span><br><span class="line">                        <span class="keyword">if</span> (v.requestFocus(direction,mTempRect)) &#123;</span><br><span class="line">                            playSoundEffect(SoundEffectConstants</span><br><span class="line">                                        .getContantForFocusDirection(direction));</span><br><span class="line">                            <span class="keyword">return</span> FINISH_HANDLED;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;</span><br><span class="line"></span><br><span class="line">                    <span class="comment">// Give the focused view a last chance to handle the dpad key.</span></span><br><span class="line">                    <span class="keyword">if</span> (mView.dispatchUnhandledMove(focused, direction)) &#123;</span><br><span class="line">                        <span class="keyword">return</span> FINISH_HANDLED;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="comment">// find the best view to give focus to in this non-touch-mode with no-focus</span></span><br><span class="line">                    View v = focusSearch(<span class="keyword">null</span>, direction);</span><br><span class="line">                    <span class="keyword">if</span> (v != <span class="keyword">null</span> &amp;&amp; v.requestFocus(direction)) &#123;</span><br><span class="line">                        <span class="keyword">return</span> FINISH_HANDLED;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    <span class="keyword">return</span> FORWARD;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看到调用了DecorView的dispatchKeyEvent()方法开始向View传递KeyEvent事件，如果事件未被消费，并且KeyCode为KEYCODE_DPAD_LEFT,KEYCODE_DPAD_RIGHT,KEYCODE_DPAD_UP,KEYCODE_DPAD_DOWN,那么会按方向查找下一个控件并获取焦点。这部分内容下一节节介绍。</p>
+<h2 id="focusSearch流程分析"><a href="#focusSearch流程分析" class="headerlink" title="focusSearch流程分析"></a>focusSearch流程分析</h2><p>processKeyEvent()在调用DecorView的dispatchKeyEvent()返回false后，先确定方向，并且根据当前是否有已获取焦点控件用不同的方式进行查找。</p>
+<p>focusSearch()方法的大致流程：<br><img src="https://github.com/wslaimin/pics/raw/master/focusSearch.png" alt></p>
+<ol>
+<li>当前focused!=null的情况</li>
+</ol>
+<p>当前focused!=null时，调用View的focusSearch()方法，寻找下一个获取焦点控件，代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> View <span class="title">focusSearch</span><span class="params">(@FocusRealDirection <span class="keyword">int</span> direction)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (mParent != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> mParent.focusSearch(<span class="keyword">this</span>, direction);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>实际上是调用了ViewGroup的focusSearch()方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> View <span class="title">focusSearch</span><span class="params">(View focused, <span class="keyword">int</span> direction)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (isRootNamespace()) &#123;</span><br><span class="line">        <span class="comment">// root namespace means we should consider ourselves the top of the</span></span><br><span class="line">        <span class="comment">// tree for focus searching; otherwise we could be focus searching</span></span><br><span class="line">        <span class="comment">// into other tabs.  see LocalActivityManager and TabHost for more info</span></span><br><span class="line">        <span class="keyword">return</span> FocusFinder.getInstance().findNextFocus(<span class="keyword">this</span>, focused, direction);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (mParent != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> mParent.focusSearch(focused, direction);</span><br><span class="line">    &#125;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到这个寻找过程是不断的调用上层容器的focusSearch()方法，直到DecorView才真正调用FocusFinder的findNextFocus()方法寻找下一个获取焦点控件。findNextFocus()方法后面再分析。</p>
+<ol start="2">
+<li>当focused==null的情况</li>
+</ol>
+<p>当前focused==null时，ViewRootImpl调用focusSearch()方法，focusSearch()方法中调用了FocusFinder的findNextFocus()方法。接下来中点介绍findNextFocus()方法。</p>
+<p>findNextFocus()方法实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">final</span> View <span class="title">findNextFocus</span><span class="params">(ViewGroup root, View focused, <span class="keyword">int</span> direction)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">return</span> findNextFocus(root, focused, <span class="keyword">null</span>, direction);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>调用了重载方法findNextFocus():</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"> <span class="function"><span class="keyword">private</span> View <span class="title">findNextFocus</span><span class="params">(ViewGroup root, View focused, Rect focusedRect, <span class="keyword">int</span> direction)</span> </span>&#123;</span><br><span class="line">    View next = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">if</span> (focused != <span class="keyword">null</span>) &#123;</span><br><span class="line">        next = findNextUserSpecifiedFocus(root, focused, direction);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (next != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> next;</span><br><span class="line">    &#125;</span><br><span class="line">    ArrayList&lt;View&gt; focusables = mTempList;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        focusables.clear();</span><br><span class="line">        root.addFocusables(focusables, direction);</span><br><span class="line">        <span class="keyword">if</span> (!focusables.isEmpty()) &#123;</span><br><span class="line">            next = findNextFocus(root, focused, focusedRect, direction, focusables);</span><br><span class="line">    &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        focusables.clear();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>addFocusables()方法返回root下所有能获取焦点的控件，然后继续调用重载方法findNextFocus():</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> View <span class="title">findNextFocus</span><span class="params">(ViewGroup root, View focused, Rect focusedRect,<span class="keyword">int</span> direction, ArrayList&lt;View&gt; focusables)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (focused != <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (focusedRect == <span class="keyword">null</span>) &#123;</span><br><span class="line">            focusedRect = mFocusedRect;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// fill in interesting rect from focused</span></span><br><span class="line">        focused.getFocusedRect(focusedRect);</span><br><span class="line">        root.offsetDescendantRectToMyCoords(focused, focusedRect);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (focusedRect == <span class="keyword">null</span>) &#123;</span><br><span class="line">            focusedRect = mFocusedRect;</span><br><span class="line">            <span class="comment">// make up a rect at top left or bottom right of root</span></span><br><span class="line">            <span class="keyword">switch</span> (direction) &#123;</span><br><span class="line">                <span class="keyword">case</span> View.FOCUS_RIGHT:</span><br><span class="line">                <span class="keyword">case</span> View.FOCUS_DOWN:</span><br><span class="line">                    setFocusTopLeft(root, focusedRect);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> View.FOCUS_FORWARD:</span><br><span class="line">                    <span class="keyword">if</span> (root.isLayoutRtl()) &#123;</span><br><span class="line">                        setFocusBottomRight(root, focusedRect);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        setFocusTopLeft(root, focusedRect);</span><br><span class="line">                    &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line"></span><br><span class="line">                <span class="keyword">case</span> View.FOCUS_LEFT:</span><br><span class="line">                <span class="keyword">case</span> View.FOCUS_UP:</span><br><span class="line">                    setFocusBottomRight(root, focusedRect);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">case</span> View.FOCUS_BACKWARD:</span><br><span class="line">                    <span class="keyword">if</span> (root.isLayoutRtl()) &#123;</span><br><span class="line">                        setFocusTopLeft(root, focusedRect);</span><br><span class="line">                    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                        setFocusBottomRight(root, focusedRect);</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                    &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> (direction) &#123;</span><br><span class="line">        <span class="keyword">case</span> View.FOCUS_FORWARD:</span><br><span class="line">        <span class="keyword">case</span> View.FOCUS_BACKWARD:</span><br><span class="line">            <span class="keyword">return</span> findNextFocusInRelativeDirection(focusables, root, focused, focusedRect,direction);</span><br><span class="line">        <span class="keyword">case</span> View.FOCUS_UP:</span><br><span class="line">        <span class="keyword">case</span> View.FOCUS_DOWN:</span><br><span class="line">        <span class="keyword">case</span> View.FOCUS_LEFT:</span><br><span class="line">        <span class="keyword">case</span> View.FOCUS_RIGHT:</span><br><span class="line">            <span class="keyword">return</span> findNextFocusInAbsoluteDirection(focusables, root, focused,focusedRect, direction);</span><br><span class="line">        <span class="keyword">default</span>:</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IllegalArgumentException(<span class="string">"Unknown direction: "</span> + direction);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>由于focusedRect==null，先根据焦点移动方向确定focusedRect，然后调用findNextFocusInAbsoluteDirection()方法:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">View <span class="title">findNextFocusInAbsoluteDirection</span><span class="params">(ArrayList&lt;View&gt; focusables, ViewGroup root, View focused,Rect focusedRect, <span class="keyword">int</span> direction)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// initialize the best candidate to something impossible</span></span><br><span class="line">    <span class="comment">// (so the first plausible view will become the best choice)</span></span><br><span class="line">    mBestCandidateRect.set(focusedRect);</span><br><span class="line">    <span class="keyword">switch</span>(direction) &#123;</span><br><span class="line">        <span class="keyword">case</span> View.FOCUS_LEFT:</span><br><span class="line">            mBestCandidateRect.offset(focusedRect.width() + <span class="number">1</span>, <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> View.FOCUS_RIGHT:</span><br><span class="line">            mBestCandidateRect.offset(-(focusedRect.width() + <span class="number">1</span>), <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> View.FOCUS_UP:</span><br><span class="line">            mBestCandidateRect.offset(<span class="number">0</span>, focusedRect.height() + <span class="number">1</span>);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">        <span class="keyword">case</span> View.FOCUS_DOWN:</span><br><span class="line">            mBestCandidateRect.offset(<span class="number">0</span>, -(focusedRect.height() + <span class="number">1</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    View closest = <span class="keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">int</span> numFocusables = focusables.size();</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; numFocusables; i++) &#123;</span><br><span class="line">        View focusable = focusables.get(i);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// only interested in other non-root views</span></span><br><span class="line">        <span class="keyword">if</span> (focusable == focused || focusable == root) <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// get focus bounds of other view in same coordinate system</span></span><br><span class="line">        focusable.getFocusedRect(mOtherRect);</span><br><span class="line">        root.offsetDescendantRectToMyCoords(focusable, mOtherRect);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (isBetterCandidate(direction, focusedRect, mOtherRect, mBestCandidateRect)) &#123;</span><br><span class="line">            mBestCandidateRect.set(mOtherRect);</span><br><span class="line">            closest = focusable;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> closest;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>focusable存储所有可获取焦点控件，遍历focusable，root.offsetDescendantRectToMyCoords()方法把控件置于root的坐标系中，然后通过isBetterCandidate()方法选出最优控件。</p>
+<p>isBetterCandidate()方法的流程：<br><img src="https://github.com/wslaimin/pics/raw/master/isBetterCandidate.png" alt></p>
+<p>isCandidate()方法判断是否在source对应的方向上</p>
+<p>beamBeats()方法判断rect1是否优于rect2,比较从三个维度展开：</p>
+<ol>
+<li>是否有重叠</li>
+<li>rect1有重叠，rect2无重叠，再从rect2是否完全在source的对应方向上。比如direction为FOCUS_LEFT,rect2.right&lt;=source.left表示rect2完全在source左边</li>
+<li>离source在direction方向上的距离</li>
+</ol>
+
+
+                <hr>
+
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2019/07/10/通过KeyEvent选中控件/" data-toggle="tooltip" data-placement="top" title="通过KeyEvent选中控件">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2019/07/10/Android事件分发机制源码分析/" data-toggle="tooltip" data-placement="top" title="Android事件分发机制源码分析">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                
+
+                
+
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/TFly">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tfly&#39;s Blog 2020 
+                    <br>
+                    Theme by Hux
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by Kaijun
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("https://wslaimin.github.io/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

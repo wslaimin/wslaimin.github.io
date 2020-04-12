@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content>
+    <meta name="keyword" content="Android,Flutter">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          ListView滚动机制分析 - Tfly的博客 | Tfly&#39;s Blog
+        
+    </title>
+
+    <link rel="canonical" href="https://wslaimin.github.io/2019/07/10/ListView滚动机制分析/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tfly&#39;s Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>ListView滚动机制分析</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by Tfly on
+                        2019-07-10
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <h2 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h2><p>了解ListView的滚动机制，在滚动过程中View如何添加到ListView。</p>
+<h2 id="实现过程"><a href="#实现过程" class="headerlink" title="实现过程"></a>实现过程</h2><p>先简单介绍下ListView滚动的大概算法。</p>
+<p>算法实现：</p>
+<ol>
+<li>ACTION_MOVE动作触发，滚出屏幕外的View添加进scrap views，并且从ListView里detach</li>
+<li>还在屏幕上的View，向滚动方向移动滚动距离</li>
+<li>填充views</li>
+<li>修正多余的滚动距离</li>
+</ol>
+<p>图示：<br><img src="https://github.com/wslaimin/pics/raw/master/listview_scroll.png" alt></p>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><p>下面分析ACTION_MOVE的方向为从下往上。</p>
+<p>1.ACTION_MOVE动作触发<br>ListView没有重写onTouchEvent(MotionEvent ev)方法，追溯到父类AbsListView，最终调用关键的scrollIfNeeded(int x, int y, MotionEvent vtev)方法。<br>scrollIfNeeded(int x,int y,MotionEvent vtev)方法中有段代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// No need to do all this work if we're not going to move anyway</span></span><br><span class="line"><span class="keyword">boolean</span> atEdge = <span class="keyword">false</span>;</span><br><span class="line"><span class="keyword">if</span> (incrementalDeltaY != <span class="number">0</span>) &#123;</span><br><span class="line">    atEdge = trackMotionScroll(deltaY, incrementalDeltaY);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>trackMotionScroll(int deltaY, int incrementalDeltaY)方法开始对ListView里的views进行处理。deltaY是ACTION_DOWN触发开始到现在移动的距离，incrementalDeltaY是每次ACTION_MOVE之间移动的距离。</p>
+<p>2.滚动到屏幕外的views添加进scrap views<br>下面代码是从下往上滚动：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line">......</span><br><span class="line"><span class="keyword">final</span> <span class="keyword">boolean</span> down = incrementalDeltaY &lt; <span class="number">0</span>;</span><br><span class="line">......</span><br><span class="line"><span class="keyword">if</span> (down) &#123;</span><br><span class="line">    <span class="comment">//移动views距离和改变top距离来判断是否滚出屏幕是等效的</span></span><br><span class="line">    <span class="keyword">int</span> top = -incrementalDeltaY;</span><br><span class="line">    <span class="keyword">if</span> ((mGroupFlags &amp; CLIP_TO_PADDING_MASK) == CLIP_TO_PADDING_MASK) &#123;</span><br><span class="line">        top += listPadding.top;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; childCount; i++) &#123;</span><br><span class="line">        <span class="keyword">final</span> View child = getChildAt(i);</span><br><span class="line">        <span class="keyword">if</span> (child.getBottom() &gt;= top) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            count++;</span><br><span class="line">            <span class="keyword">int</span> position = firstPosition + i;</span><br><span class="line">            <span class="keyword">if</span> (position &gt;= headerViewsCount &amp;&amp; position &lt; footerViewsStart) &#123;</span><br><span class="line">                <span class="comment">// The view will be rebound to new data, clear any</span></span><br><span class="line">                <span class="comment">// system-managed transient state.</span></span><br><span class="line">                child.clearAccessibilityFocus();</span><br><span class="line">                mRecycler.addScrapView(child, position);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">......</span><br></pre></td></tr></table></figure>
+<p>3.移动还在屏幕上views</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">offsetChildrenTopAndBottom(incrementalDeltaY);</span><br></pre></td></tr></table></figure>
+<p>4.填充views<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="keyword">int</span> absIncrementalDeltaY = Math.abs(incrementalDeltaY);</span><br><span class="line"><span class="keyword">if</span> (spaceAbove &lt; absIncrementalDeltaY || spaceBelow &lt; absIncrementalDeltaY) &#123;</span><br><span class="line">    fillGap(down);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>从上往下滑动，第一个child在屏幕外高度&gt;absIncrementalDeltaY,不用填充view;从下往上滑动，最后一个child在屏幕外高度&gt;absIncrementalDeltaY，不用填充view。</p>
+<p>fillGap(boolean down)方法由ListView实现。分析往下方向填充的过程。<br><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">fillGap</span><span class="params">(<span class="keyword">boolean</span> down)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> count = getChildCount();</span><br><span class="line">    <span class="keyword">if</span> (down) &#123;</span><br><span class="line">        <span class="keyword">int</span> paddingTop = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">if</span> ((mGroupFlags &amp; CLIP_TO_PADDING_MASK) == CLIP_TO_PADDING_MASK) &#123;</span><br><span class="line">            paddingTop = getListPaddingTop();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> startOffset = count &gt; <span class="number">0</span> ? getChildAt(count - <span class="number">1</span>).getBottom() + mDividerHeight :paddingTop;</span><br><span class="line">        fillDown(mFirstPosition + count, startOffset);</span><br><span class="line">        correctTooHigh(getChildCount());</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">        ......</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>5.修正多余滚动距离<br>fillDown(int pos, int nextTop)方法做了填充工作。填充完考虑下，如果滚动距离太大，可能最后一个view填充完后下面还有一段距离,这就需要后面的correctTooHigh(int childCount)来修正。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">correctTooHigh</span><span class="params">(<span class="keyword">int</span> childCount)</span> </span>&#123;</span><br><span class="line">    <span class="comment">// First see if the last item is visible. If it is not, it is OK for the</span></span><br><span class="line">    <span class="comment">// top of the list to be pushed up.</span></span><br><span class="line">    <span class="keyword">int</span> lastPosition = mFirstPosition + childCount - <span class="number">1</span>;</span><br><span class="line">    <span class="keyword">if</span> (lastPosition == mItemCount - <span class="number">1</span> &amp;&amp; childCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Get the last child ...</span></span><br><span class="line">        <span class="keyword">final</span> View lastChild = getChildAt(childCount - <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// ... and its bottom edge</span></span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> lastBottom = lastChild.getBottom();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// This is bottom of our drawable area</span></span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> end = (mBottom - mTop) - mListPadding.bottom;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// This is how far the bottom edge of the last view is from the bottom of the</span></span><br><span class="line">        <span class="comment">// drawable area</span></span><br><span class="line">        <span class="keyword">int</span> bottomOffset = end - lastBottom;</span><br><span class="line">        View firstChild = getChildAt(<span class="number">0</span>);</span><br><span class="line">        <span class="keyword">final</span> <span class="keyword">int</span> firstTop = firstChild.getTop()    </span><br><span class="line">        <span class="comment">// Make sure we are 1) Too high, and 2) Either there are more rows above the</span></span><br><span class="line">        <span class="comment">// first row or the first row is scrolled off the top of the drawable area</span></span><br><span class="line">        <span class="keyword">if</span> (bottomOffset &gt; <span class="number">0</span> &amp;&amp; (mFirstPosition &gt; <span class="number">0</span> || firstTop &lt; mListPadding.top))  &#123;</span><br><span class="line">            <span class="keyword">if</span> (mFirstPosition == <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// Don't pull the top too far down</span></span><br><span class="line">                bottomOffset = Math.min(bottomOffset, mListPadding.top - firstTop);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// Move everything down</span></span><br><span class="line">            offsetChildrenTopAndBottom(bottomOffset);</span><br><span class="line">            <span class="keyword">if</span> (mFirstPosition &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// Fill the gap that was opened above mFirstPosition with more rows, if possible</span></span><br><span class="line">                fillUp(mFirstPosition - <span class="number">1</span>, firstChild.getTop() - mDividerHeight);</span><br><span class="line">                <span class="comment">// Close up the remaining gap</span></span><br><span class="line">                adjustViewsUpOrDown();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面代码的思路：<br><br>1.最后一个view的bottom小于end说明需要修正<br><br>2.如果需要修正<br><br>a.如果第一个view的绝对position=0，那么修正距离为mListPadding.top-firstTop<br><br>b.如果第一个view的绝对position&gt;0，那么先将所有views向下移动bottomOffset，然后向上填充views，填充完可能上部有未填满部分，所以调用adjustViewsUpOrdown()向上平移。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">adjustViewsUpOrDown</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> <span class="keyword">int</span> childCount = getChildCount();</span><br><span class="line">    <span class="keyword">int</span> delta;</span><br><span class="line">    <span class="keyword">if</span> (childCount &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        View child;</span><br><span class="line">        <span class="keyword">if</span> (!mStackFromBottom) &#123;</span><br><span class="line">            <span class="comment">// Uh-oh -- we came up short. Slide all views up to make them</span></span><br><span class="line">            <span class="comment">// align with the top</span></span><br><span class="line">            child = getChildAt(<span class="number">0</span>);</span><br><span class="line">            delta = child.getTop() - mListPadding.top;</span><br><span class="line">            <span class="keyword">if</span> (mFirstPosition != <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// It's OK to have some space above the first item if it is</span></span><br><span class="line">                <span class="comment">// part of the vertical spacing</span></span><br><span class="line">                delta -= mDividerHeight;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (delta &lt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// We only are looking to see if we are too low, not too high</span></span><br><span class="line">                delta = <span class="number">0</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span>&#123;</span><br><span class="line">            ......</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (delta != <span class="number">0</span>) &#123;</span><br><span class="line">            offsetChildrenTopAndBottom(-delta);</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>mStackFromBottom表示的是view数量不够的时候是吸顶还是吸底，默认为false。</p>
+<p>上面的算法思路：第一个view的绝对position为0，并且delta大于0，那么所有views移动-delta。</p>
+
+
+                <hr>
+
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2019/07/10/QQ气泡拖拽效果/" data-toggle="tooltip" data-placement="top" title="QQ气泡拖拽效果">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2019/07/10/Java泛型介绍/" data-toggle="tooltip" data-placement="top" title="Java泛型介绍">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                
+
+                
+
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/TFly">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tfly&#39;s Blog 2020 
+                    <br>
+                    Theme by Hux
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by Kaijun
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("https://wslaimin.github.io/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>

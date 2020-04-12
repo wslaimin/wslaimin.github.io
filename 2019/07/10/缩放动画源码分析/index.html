@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Head tag -->
+<head><meta name="generator" content="Hexo 3.9.0">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google-site-verification" content="xBT4GhYoi5qRD5tr338pgPM5OWHHIDR6mNg1a3euekI">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content>
+    <meta name="keyword" content="Android,Flutter">
+    <link rel="shortcut icon" href="/img/favicon.ico">
+
+    <title>
+        
+          缩放动画源码分析 - Tfly的博客 | Tfly&#39;s Blog
+        
+    </title>
+
+    <link rel="canonical" href="https://wslaimin.github.io/2019/07/10/缩放动画源码分析/">
+
+    <!-- Bootstrap Core CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/hux-blog.min.css">
+
+    <!-- Pygments Highlight CSS -->
+    <link rel="stylesheet" href="/css/highlight.css">
+
+    <!-- Custom Fonts -->
+    <!-- <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" type="text/css"> -->
+    <!-- Hux change font-awesome CDN to qiniu -->
+    <link href="https://cdn.staticfile.org/font-awesome/4.5.0/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+
+    <!-- Hux Delete, sad but pending in China
+    <link href='http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/
+    css'>
+    -->
+
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- ga & ba script hoook -->
+    <script></script>
+</head>
+
+
+<!-- hack iOS CSS :active style -->
+<body ontouchstart="">
+
+    <!-- Navigation -->
+<nav class="navbar navbar-default navbar-custom navbar-fixed-top">
+    <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+            <button type="button" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Tfly&#39;s Blog</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <!-- Known Issue, found by Hux:
+            <nav>'s height woule be hold on by its content.
+            so, when navbar scale out, the <nav> will cover tags.
+            also mask any touch event of tags, unfortunately.
+        -->
+        <div id="huxblog_navbar">
+            <div class="navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="/">Home</a>
+                    </li>
+
+                    
+
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/about/">About</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/archives/">Archives</a>
+                        </li>
+                        
+                    
+
+                        
+                        <li>
+                            <a href="/tags/">Tags</a>
+                        </li>
+                        
+                    
+                    
+                </ul>
+            </div>
+        </div>
+        <!-- /.navbar-collapse -->
+    </div>
+    <!-- /.container -->
+</nav>
+<script>
+    // Drop Bootstarp low-performance Navbar
+    // Use customize navbar with high-quality material design animation
+    // in high-perf jank-free CSS3 implementation
+    var $body   = document.body;
+    var $toggle = document.querySelector('.navbar-toggle');
+    var $navbar = document.querySelector('#huxblog_navbar');
+    var $collapse = document.querySelector('.navbar-collapse');
+
+    $toggle.addEventListener('click', handleMagic)
+    function handleMagic(e){
+        if ($navbar.className.indexOf('in') > 0) {
+        // CLOSE
+            $navbar.className = " ";
+            // wait until animation end.
+            setTimeout(function(){
+                // prevent frequently toggle
+                if($navbar.className.indexOf('in') < 0) {
+                    $collapse.style.height = "0px"
+                }
+            },400)
+        }else{
+        // OPEN
+            $collapse.style.height = "auto"
+            $navbar.className += " in";
+        }
+    }
+</script>
+
+
+    <!-- Main Content -->
+    
+<!-- Image to hack wechat -->
+<!-- <img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0"> -->
+<!-- <img src="{{ site.baseurl }}/{% if page.header-img %}{{ page.header-img }}{% else %}{{ site.header-img }}{% endif %}" width="0" height="0"> -->
+
+<!-- Post Header -->
+<style type="text/css">
+    header.intro-header{
+        background-image: url('/img/home-bg.jpg')
+    }
+</style>
+<header class="intro-header" >
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <div class="post-heading">
+                    <div class="tags">
+                        
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                    <h1>缩放动画源码分析</h1>
+                    <h2 class="subheading"></h2>
+                    <span class="meta">
+                        Posted by Tfly on
+                        2019-07-10
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Post Content -->
+<article>
+    <div class="container">
+        <div class="row">
+
+    <!-- Post Container -->
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                post-container">
+
+                <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>这个动画例子来自于Android官方文档Trainning中Addding Animations一章中。<br><a href="https://developer.android.google.cn/shareables/training/Animations.zip" target="_blank" rel="noopener">Demo下载地址</a></p>
+<h2 id="动画效果"><a href="#动画效果" class="headerlink" title="动画效果"></a>动画效果</h2><p><img src="https://github.com/wslaimin/pics/raw/master/zoom.gif" alt></p>
+<h2 id="源码分析"><a href="#源码分析" class="headerlink" title="源码分析"></a>源码分析</h2><p>只需要看放大的过程，缩小的过程是放大的逆过程。</p>
+<h3 id="布局分析"><a href="#布局分析" class="headerlink" title="布局分析"></a>布局分析</h3><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">FrameLayout</span> <span class="attr">xmlns:android</span>=<span class="string">"http://schemas.android.com/apk/res/android"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:id</span>=<span class="string">"@+id/container"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_width</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">    <span class="attr">android:layout_height</span>=<span class="string">"match_parent"</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;<span class="name">LinearLayout</span> <span class="attr">android:layout_width</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_height</span>=<span class="string">"wrap_content"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:orientation</span>=<span class="string">"vertical"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:padding</span>=<span class="string">"16dp"</span>&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="tag">&lt;<span class="name">TextView</span> <span class="attr">style</span>=<span class="string">"?android:textAppearanceSmall"</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_width</span>=<span class="string">"wrap_content"</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_height</span>=<span class="string">"wrap_content"</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:text</span>=<span class="string">"@string/message_zoom_touch_expand"</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">&lt;!-- This is an example layout containing thumbnail image buttons that, when pressed,</span></span><br><span class="line"><span class="comment">             zoom in to show more detail. All of the zooming and animation logic is in</span></span><br><span class="line"><span class="comment">             the ZoomActivity class. --&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">LinearLayout</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_width</span>=<span class="string">"wrap_content"</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_height</span>=<span class="string">"wrap_content"</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:layout_marginTop</span>=<span class="string">"16dp"</span></span></span><br><span class="line"><span class="tag">            <span class="attr">android:orientation</span>=<span class="string">"horizontal"</span>&gt;</span></span><br><span class="line"></span><br><span class="line">            <span class="comment">&lt;!-- These buttons don't have any decorations (3D bevel, etc.), but it's still</span></span><br><span class="line"><span class="comment">                 important to show feedback on touch or focus. The custom</span></span><br><span class="line"><span class="comment">                 "ToughHighlightImageButton" ImageButton subclass helps achieve this by drawing</span></span><br><span class="line"><span class="comment">                 the standard system "pressed" and "focused" overlay upon user interaction. --&gt;</span></span><br><span class="line"></span><br><span class="line">            <span class="tag">&lt;<span class="name">com.example.android.animationsdemo.TouchHighlightImageButton</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:id</span>=<span class="string">"@+id/thumb_button_1"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:layout_width</span>=<span class="string">"100dp"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:layout_height</span>=<span class="string">"75dp"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:layout_marginRight</span>=<span class="string">"1dp"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:src</span>=<span class="string">"@drawable/thumb1"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:scaleType</span>=<span class="string">"centerCrop"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:contentDescription</span>=<span class="string">"@string/description_image_1"</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">            <span class="tag">&lt;<span class="name">com.example.android.animationsdemo.TouchHighlightImageButton</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:id</span>=<span class="string">"@+id/thumb_button_2"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:layout_width</span>=<span class="string">"100dp"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:layout_height</span>=<span class="string">"75dp"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:src</span>=<span class="string">"@drawable/thumb2"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:scaleType</span>=<span class="string">"centerCrop"</span></span></span><br><span class="line"><span class="tag">                <span class="attr">android:contentDescription</span>=<span class="string">"@string/description_image_2"</span> /&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="tag">&lt;/<span class="name">LinearLayout</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="tag">&lt;/<span class="name">LinearLayout</span>&gt;</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">&lt;!-- This initially-hidden ImageView will hold the expanded/zoomed version of the</span></span><br><span class="line"><span class="comment">         images above. Without transformations applied, it takes up the entire screen.</span></span><br><span class="line"><span class="comment">         To achieve the "zoom" animation, this view's bounds are animated from the</span></span><br><span class="line"><span class="comment">         bounds of the thumbnail buttons above, to its final laid-out bounds. The implementation</span></span><br><span class="line"><span class="comment">         of this animation is in the ZoomActivity class. --&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">ImageView</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:id</span>=<span class="string">"@+id/expanded_image"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_width</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:layout_height</span>=<span class="string">"match_parent"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:visibility</span>=<span class="string">"invisible"</span></span></span><br><span class="line"><span class="tag">        <span class="attr">android:contentDescription</span>=<span class="string">"@string/description_zoom_touch_close"</span> /&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">FrameLayout</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>从上面看到，实现的整体思路是，小图用一个小的ImageView显示，放大过程图片显示以及动画作用的对象为另一个ImageView，可称之为目标ImageView。</p>
+<h3 id="动画实现代码分析"><a href="#动画实现代码分析" class="headerlink" title="动画实现代码分析"></a>动画实现代码分析</h3><p>1、同一坐标系<br>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//小图Bounds</span></span><br><span class="line"><span class="keyword">final</span> Rect startBounds = <span class="keyword">new</span> Rect();</span><br><span class="line"><span class="comment">//大图Bounds</span></span><br><span class="line"><span class="keyword">final</span> Rect finalBounds = <span class="keyword">new</span> Rect();</span><br><span class="line"><span class="keyword">final</span> Point globalOffset = <span class="keyword">new</span> Point();</span><br><span class="line"></span><br><span class="line">thumbView.getGlobalVisibleRect(startBounds);</span><br><span class="line">findViewById(R.id.container).getGlobalVisibleRect(finalBounds, globalOffset);</span><br><span class="line">startBounds.offset(-globalOffset.x, -globalOffset.y);</span><br><span class="line">finalBounds.offset(-globalOffset.x, -globalOffset.y);</span><br></pre></td></tr></table></figure>
+<p>getGlobalVisibleRect()获取的是绝对坐标(即在屏幕上的坐标);<br><br>id为R.id.containner的布局为小图ImageView和大图ImageView的parent;<br><br>startBounds.offset(-globalOffset.x,-globalOffset.y)和finalBounds.offset(-globalOffset.x,-globalOffset)将startBounds和finalBounds同处于大图ImageView所处parent的坐标系，这样动画才能统一度量。</p>
+<p>2、startBounds的宽高比调整为和finalBounds一样的宽高比</p>
+<p>代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//startBounds的宽或高只能扩大，不能缩小</span></span><br><span class="line"></span><br><span class="line"><span class="comment">//finalBounds宽高比大于startBounds宽高比，需要扩大startBounds的宽度</span></span><br><span class="line"><span class="keyword">if</span> ((<span class="keyword">float</span>) finalBounds.width() / finalBounds.height()&gt; (<span class="keyword">float</span>) startBounds.width() / startBounds.height()) &#123;</span><br><span class="line">    <span class="comment">// Extend start bounds horizontally</span></span><br><span class="line">    <span class="comment">//以高为基准计算出比率</span></span><br><span class="line">    startScale = (<span class="keyword">float</span>) startBounds.height() /finalBounds.height();</span><br><span class="line">    <span class="comment">//计算出期望到初始宽度</span></span><br><span class="line">    <span class="keyword">float</span> startWidth = startScale * finalBounds.width();</span><br><span class="line">    <span class="comment">//通过改变startBounds的left和right来改变大小</span></span><br><span class="line">    <span class="comment">//同时由于大图ImageView是居中显示，变化后图片仍然是与小图重合</span></span><br><span class="line">    <span class="keyword">float</span> deltaWidth = (startWidth - startBounds.width()) / <span class="number">2</span>;</span><br><span class="line">    startBounds.left -= deltaWidth;</span><br><span class="line">    startBounds.right += deltaWidth;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="comment">// Extend start bounds vertically</span></span><br><span class="line">    startScale = (<span class="keyword">float</span>) startBounds.width() / finalBounds.width();</span><br><span class="line">    <span class="keyword">float</span> startHeight = startScale * finalBounds.height();</span><br><span class="line">    <span class="keyword">float</span> deltaHeight = (startHeight - startBounds.height()) / <span class="number">2</span>;</span><br><span class="line">    startBounds.top -= deltaHeight;</span><br><span class="line">    startBounds.bottom += deltaHeight;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">final</span> <span class="keyword">float</span> startScaleFinal = startScale;</span><br></pre></td></tr></table></figure>
+<p>为什么要这么做？<br>因为如果同一时间内，假如宽度从比率startBounds.width()/finalBounds.width()扩大到1，高度从比率startBounds.height()/finalBounds.heigh()扩大到1，在动画过程会发现很不自然,以为在变化过程中大图IamgeView的宽高比没有始终保持同一比例，导致图片可能被拉伸或压缩。</p>
+<p>不自然到效果：</p>
+<p><img src="https://github.com/wslaimin/pics/raw/master/unNaturalyZoom.gif" alt></p>
+<p>怎么做调整startBounds使之和finalBounds有相同到宽高比？<br>请看上面代码注释</p>
+<p>3、Show Time</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//小图不可见，大图可见</span></span><br><span class="line">thumbView.setAlpha(<span class="number">0f</span>);</span><br><span class="line">expandedImageView.setVisibility(View.VISIBLE);</span><br><span class="line"></span><br><span class="line"><span class="comment">//以大图的左上角为缩放中点</span></span><br><span class="line">expandedImageView.setPivotX(<span class="number">0f</span>);</span><br><span class="line">expandedImageView.setPivotY(<span class="number">0f</span>);</span><br><span class="line"></span><br><span class="line">AnimatorSet set = <span class="keyword">new</span> AnimatorSet();</span><br><span class="line"><span class="comment">//扩大通过View.SCALE_X,View.SCALE_Y属性来实现</span></span><br><span class="line"><span class="comment">//View.X,View.Y属性来实现大图从小图左上角开始扩大</span></span><br><span class="line">set</span><br><span class="line">    .play(ObjectAnimator.ofFloat(expandedImageView, View.X, startBounds.left,finalBounds.left))</span><br><span class="line">    .with(ObjectAnimator.ofFloat(expandedImageView, View.Y, startBounds.top,finalBounds.top))</span><br><span class="line">    .with(ObjectAnimator.ofFloat(expandedImageView, View.SCALE_X, startScale, <span class="number">1f</span>))</span><br><span class="line">    .with(ObjectAnimator.ofFloat(expandedImageView, View.SCALE_Y, startScale, <span class="number">1f</span>));</span><br><span class="line">    </span><br><span class="line">set.setDuration(mShortAnimationDuration);</span><br><span class="line">set.setInterpolator(<span class="keyword">new</span> DecelerateInterpolator());</span><br><span class="line">set.addListener(<span class="keyword">new</span> AnimatorListenerAdapter() &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationEnd</span><span class="params">(Animator animation)</span> </span>&#123;</span><br><span class="line">        mCurrentAnimator = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onAnimationCancel</span><span class="params">(Animator animation)</span> </span>&#123;</span><br><span class="line">        mCurrentAnimator = <span class="keyword">null</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;);</span><br><span class="line">set.start();</span><br></pre></td></tr></table></figure>
+<h2 id="要点总结"><a href="#要点总结" class="headerlink" title="要点总结"></a>要点总结</h2><ol>
+<li>动画作用的目标对象是大图ImageView</li>
+<li>初始状态和最终状态要处于目标对象所在的坐标系</li>
+<li>初始状态和最终状态有相同到宽高比</li>
+</ol>
+<h1 id="PS-给ImageView加上前景图片"><a href="#PS-给ImageView加上前景图片" class="headerlink" title="PS 给ImageView加上前景图片"></a>PS 给ImageView加上前景图片</h1><p>其他View设置StateListDrawable，可以在点击时更改背景，对于ImageView如何实现？</p>
+<p>由于ImageView设置到图片会覆盖背景，所以一般到方法并不能实现。</p>
+<p>实现思路：</p>
+<ol>
+<li>继承ImageView或ImageButton</li>
+<li>新增Drawable类型成员变量mForegroundDrawable引用StatListDrawable对象</li>
+<li>重写View的drawableStateChanged()方法，设置mForegroundDrawable为当前状态</li>
+</ol>
+<p>部分实现：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">TouchHighlightImageButton</span> <span class="keyword">extends</span> <span class="title">ImageButton</span> </span>&#123;</span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * The highlight drawable. This generally a &#123;<span class="doctag">@link</span> android.graphics.drawable.StateListDrawable&#125;</span></span><br><span class="line"><span class="comment">     * that's transparent in the default state, and contains a semi-transparent overlay</span></span><br><span class="line"><span class="comment">     * for the focused and pressed states.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Drawable mForegroundDrawable;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * The cached bounds of the view.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> Rect mCachedBounds = <span class="keyword">new</span> Rect();</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">TouchHighlightImageButton</span><span class="params">(Context context, AttributeSet attrs)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>(context, attrs);</span><br><span class="line">        init();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * General view initialization used common to all constructors of the view.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="comment">// Reset default ImageButton background and padding.</span></span><br><span class="line">        setBackgroundColor(<span class="number">0</span>);</span><br><span class="line">        setPadding(<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Retrieve the drawable resource assigned to the android.R.attr.selectableItemBackground</span></span><br><span class="line">        <span class="comment">// theme attribute from the current theme.</span></span><br><span class="line">        TypedArray a = getContext()</span><br><span class="line">                .obtainStyledAttributes(<span class="keyword">new</span> <span class="keyword">int</span>[]&#123;android.R.attr.selectableItemBackground&#125;);</span><br><span class="line">        mForegroundDrawable = a.getDrawable(<span class="number">0</span>);</span><br><span class="line">        mForegroundDrawable.setCallback(<span class="keyword">this</span>);</span><br><span class="line">        a.recycle();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">drawableStateChanged</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.drawableStateChanged();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Update the state of the highlight drawable to match</span></span><br><span class="line">        <span class="comment">// the state of the button.</span></span><br><span class="line">        <span class="keyword">if</span> (mForegroundDrawable.isStateful()) &#123;</span><br><span class="line">            mForegroundDrawable.setState(getDrawableState());</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Trigger a redraw.</span></span><br><span class="line">        invalidate();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onDraw</span><span class="params">(Canvas canvas)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// First draw the image.</span></span><br><span class="line">        <span class="keyword">super</span>.onDraw(canvas);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Then draw the highlight on top of it. If the button is neither focused</span></span><br><span class="line">        <span class="comment">// nor pressed, the drawable will be transparent, so just the image</span></span><br><span class="line">        <span class="comment">// will be drawn.</span></span><br><span class="line">        mForegroundDrawable.setBounds(mCachedBounds);</span><br><span class="line">        mForegroundDrawable.draw(canvas);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">protected</span> <span class="keyword">void</span> <span class="title">onSizeChanged</span><span class="params">(<span class="keyword">int</span> w, <span class="keyword">int</span> h, <span class="keyword">int</span> oldw, <span class="keyword">int</span> oldh)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">super</span>.onSizeChanged(w, h, oldw, oldh);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// Cache the view bounds.</span></span><br><span class="line">        mCachedBounds.set(<span class="number">0</span>, <span class="number">0</span>, w, h);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+                <hr>
+
+                
+
+                <ul class="pager">
+                    
+                        <li class="previous">
+                            <a href="/2019/07/10/View的工作流程/" data-toggle="tooltip" data-placement="top" title="View的工作流程">&larr; Previous Post</a>
+                        </li>
+                    
+                    
+                        <li class="next">
+                            <a href="/2019/07/10/通过KeyEvent选中控件/" data-toggle="tooltip" data-placement="top" title="通过KeyEvent选中控件">Next Post &rarr;</a>
+                        </li>
+                    
+                </ul>
+
+                
+
+                
+
+            </div>
+    <!-- Side Catalog Container -->
+        
+
+    <!-- Sidebar Container -->
+
+            <div class="
+                col-lg-8 col-lg-offset-2
+                col-md-10 col-md-offset-1
+                sidebar-container">
+
+                <!-- Featured Tags -->
+                
+                <section>
+                    <!-- no hr -->
+                    <h5><a href="/tags/">FEATURED TAGS</a></h5>
+                    <div class="tags">
+                       
+                          <a class="tag" href="/tags/#Android" title="Android">Android</a>
+                        
+                    </div>
+                </section>
+                
+
+                <!-- Friends Blog -->
+                
+            </div>
+
+        </div>
+    </div>
+</article>
+
+
+
+
+
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+<!-- anchor-js, Doc:http://bryanbraun.github.io/anchorjs/ -->
+<script>
+    async("https://cdn.bootcss.com/anchor-js/1.1.1/anchor.min.js",function(){
+        anchors.options = {
+          visible: 'always',
+          placement: 'right',
+          icon: '#'
+        };
+        anchors.add().remove('.intro-header h1').remove('.subheading').remove('.sidebar-container h5');
+    })
+</script>
+<style>
+    /* place left on bigger screen */
+    @media all and (min-width: 800px) {
+        .anchorjs-link{
+            position: absolute;
+            left: -0.75em;
+            font-size: 1.1em;
+            margin-top : -0.1em;
+        }
+    }
+</style>
+
+
+
+    <!-- Footer -->
+    <!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1">
+                <ul class="list-inline text-center">
+                
+                
+                
+
+                
+
+                
+
+                
+                    <li>
+                        <a target="_blank"  href="https://github.com/TFly">
+                            <span class="fa-stack fa-lg">
+                                <i class="fa fa-circle fa-stack-2x"></i>
+                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+                            </span>
+                        </a>
+                    </li>
+                
+
+                
+
+                </ul>
+                <p class="copyright text-muted">
+                    Copyright &copy; Tfly&#39;s Blog 2020 
+                    <br>
+                    Theme by Hux
+                    <span style="display: inline-block; margin: 0 5px;">
+                        <i class="fa fa-heart"></i>
+                    </span> 
+                    Ported by Kaijun
+                </p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery -->
+<script src="/js/jquery.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="/js/bootstrap.min.js"></script>
+
+<!-- Custom Theme JavaScript -->
+<script src="/js/hux-blog.min.js"></script>
+
+
+<!-- async load function -->
+<script>
+    function async(u, c) {
+      var d = document, t = 'script',
+          o = d.createElement(t),
+          s = d.getElementsByTagName(t)[0];
+      o.src = u;
+      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
+      s.parentNode.insertBefore(o, s);
+    }
+</script>
+
+<!-- 
+     Because of the native support for backtick-style fenced code blocks 
+     right within the Markdown is landed in Github Pages, 
+     From V1.6, There is no need for Highlight.js, 
+     so Huxblog drops it officially.
+
+     - https://github.com/blog/2100-github-pages-now-faster-and-simpler-with-jekyll-3-0  
+     - https://help.github.com/articles/creating-and-highlighting-code-blocks/    
+-->
+<!--
+    <script>
+        async("http://cdn.bootcss.com/highlight.js/8.6/highlight.min.js", function(){
+            hljs.initHighlightingOnLoad();
+        })
+    </script>
+    <link href="http://cdn.bootcss.com/highlight.js/8.6/styles/github.min.css" rel="stylesheet">
+-->
+
+
+<!-- jquery.tagcloud.js -->
+<script>
+    // only load tagcloud.js in tag.html
+    if($('#tag_cloud').length !== 0){
+        async("https://wslaimin.github.io/js/jquery.tagcloud.js",function(){
+            $.fn.tagcloud.defaults = {
+                //size: {start: 1, end: 1, unit: 'em'},
+                color: {start: '#bbbbee', end: '#0085a1'},
+            };
+            $('#tag_cloud a').tagcloud();
+        })
+    }
+</script>
+
+<!--fastClick.js -->
+<script>
+    async("https://cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
+        var $nav = document.querySelector("nav");
+        if($nav) FastClick.attach($nav);
+    })
+</script>
+
+
+<!-- Google Analytics -->
+
+
+
+
+<!-- Baidu Tongji -->
+
+
+<!-- Side Catalog -->
+
+
+
+
+
+<!-- Image to hack wechat -->
+<img src="https://wslaimin.github.io/img/icon_wechat.png" width="0" height="0" />
+<!-- Migrate from head to bottom, no longer block render and still work -->
+
+</body>
+
+</html>
